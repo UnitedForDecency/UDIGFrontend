@@ -1,0 +1,22 @@
+#root {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* Page Containers, layout wrappers, app-level spacing go here */
+
+/* Mobile scaling compatability */
+.mobile-only {
+    display: none;
+}
+
+/* Media query for screens up to 768px (common mobile breakpoint) */
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none; /* Hide desktop elements on mobile */
+    }
+    .mobile-only {
+        display: block; /* Show mobile elements on mobile */
+    }
+}

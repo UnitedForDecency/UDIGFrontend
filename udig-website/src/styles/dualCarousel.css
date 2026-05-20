@@ -1,0 +1,24 @@
+@keyframes scroll-left {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(calc(-1 * var(--track-w))); }
+}
+
+@keyframes scroll-right {
+    0%   { transform: translateX(calc(-1 * var(--track-w))); }
+    100% { transform: translateX(0); }
+}
+
+.animate-scroll-left {
+    animation: scroll-left 60s linear infinite;
+}
+
+.animate-scroll-right {
+    animation: scroll-right 60s linear infinite;
+}
+
+.carousel-image {
+    border-radius: 16px;
+    flex-shrink: 0;
+    width: auto;       /* keep aspect ratio */
+    min-width: 200px;  /* prevent collapse before load */
+}
