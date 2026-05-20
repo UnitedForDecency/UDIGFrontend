@@ -9,7 +9,6 @@ import { Controller, useForm } from "react-hook-form";
 import { Field, FieldError, FieldLabel, FieldSet } from "@/components/ui/field";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { press } from "framer-motion";
 
 interface PressCoverage {
     _id: string;

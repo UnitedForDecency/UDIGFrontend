@@ -1,4 +1,3 @@
-import { type TokenProp } from "@/App";
 import { useEffect, useState } from "react";
 
 export interface ImageType {
@@ -30,7 +29,7 @@ const SECTION_LABELS: Record<string, Record<string, string>> = {
     programs: { headerImage: "Header Background" },
 };
 
-export default function ImagesAdmin({ token }: TokenProp) {
+export default function ImagesAdmin() {
     const [file, setFile] = useState<File | null>(null);
     const [page, setPage] = useState("home");
     const [section, setSection] = useState("headerCarousel");

@@ -70,7 +70,7 @@ export default function PressCoverageEditAdmin() {
         defaultValues: { title: "", description: "", category: "", readTime: "", contents: "" },
     });
 
-    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const onSubmit = async () => {
         if (!content || content === "<p></p>") {
             setContentsMissing(true);
             return;

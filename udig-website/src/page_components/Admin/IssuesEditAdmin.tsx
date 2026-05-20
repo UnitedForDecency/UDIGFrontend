@@ -63,7 +63,7 @@ export default function IssuesEditAdmin() {
         },
     })
 
-    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const onSubmit = async () => {
         if (content == "" || content == "<p></p>"){
             contentsMissing = true;
         } else {

@@ -18,7 +18,6 @@ export default function Issues() {
     const [loading, setLoading] = useState(true);
 
     const [token, setToken] = useState<string | null>(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
 
     const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -49,7 +48,6 @@ export default function Issues() {
         if (storedToken && expiry && Date.now() < Number(expiry)) {
             setToken(storedToken);
             setIsAdmin(storedAdmin);
-            setIsLoggedIn(true);
         } else {
             setToken(null);
             setIsAdmin(false);

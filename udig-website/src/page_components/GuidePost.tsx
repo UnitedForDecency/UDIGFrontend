@@ -17,8 +17,6 @@ const GuidePost = () => {
     const location = useLocation();
     const [guide, setGuide] = useState<Guide | null>(location.state?.guide ?? null);
     const [loading, setLoading] = useState(!location.state?.guide);
-    const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         if (location.state?.guide) return;

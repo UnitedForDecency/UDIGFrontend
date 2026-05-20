@@ -1,7 +1,7 @@
 /// <reference types="google.maps" />
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {AdvancedMarker, APIProvider, Map, Pin, useMap, type MapCameraChangedEvent} from '@vis.gl/react-google-maps';
+import {AdvancedMarker, Map, Pin, useMap, type MapCameraChangedEvent} from '@vis.gl/react-google-maps';
 import {SearchIcon, X } from 'lucide-react';
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"

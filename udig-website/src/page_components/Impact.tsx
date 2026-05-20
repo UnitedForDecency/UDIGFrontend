@@ -2,15 +2,8 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Info } from "lucide-react";
 import { motion } from "framer-motion";
-import { getImpactCards } from "./Admin/ImpactAPI";
-import type { ImpactCard } from "./Admin/ImpactAPI";
-
-interface ImageType {
-    _id: string;
-    url: string;
-    page: string;
-    section: string;
-}
+import { getImpactCards } from "./Admin/impactAPI";
+import type { ImpactCard } from "./Admin/impactAPI";
 
 export default function Impact() {
     const [highlights, setHighlights] = useState<ImpactCard[]>([]);

@@ -164,8 +164,6 @@ export default function SocialMedia({ token }: TokenProp) {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [titleInput, setTitleInput] = useState("");
-  const [stateInput, setStateInput] = useState("");
-  const [cityInput, setCityInput] = useState("");
   const [linkInput, setLinkInput] = useState("");
   const [descriptionInput, setDescriptionInput] = useState("");
 
@@ -175,10 +173,8 @@ export default function SocialMedia({ token }: TokenProp) {
 
   const [userId, setUserId] = useState("");
   const [username, setUsername] = useState("");
-  const [userLoggedIn, setUserLoggedIn] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
-  const [reportedPosts, setReportedPosts] = useState<Record<string, boolean>>({});
 
   const [reportingPostId, setReportingPostId] = useState<string | null>(null);
   const [reportMessage, setReportMessage] = useState("");
@@ -196,7 +192,6 @@ export default function SocialMedia({ token }: TokenProp) {
   const [cities, setCities] = useState<ICity[]>([]);
   const [selectedCity, setSelectedCity] = useState("");
 
-  const [filter, setFilter] = useState("");
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
@@ -254,7 +249,6 @@ export default function SocialMedia({ token }: TokenProp) {
       const res = await axios.get(`${apiBase}/accounts/token/${token}`);
       setUserId(res.data.userId);
       setUsername(res.data.username || "");
-      setUserLoggedIn(true);
     } catch (err) {
       notifyApiError(err as AxiosError, "fetch user");
     }
@@ -300,8 +294,6 @@ export default function SocialMedia({ token }: TokenProp) {
           });
 
           setTitleInput(""); 
-          setStateInput("");
-          setCityInput("");
           setLinkInput(""); 
           setDescriptionInput(""); 
           setShowModal(false); 
@@ -379,11 +371,6 @@ export default function SocialMedia({ token }: TokenProp) {
         reason: reportMessage,
         category: "post",
       });
-
-      setReportedPosts((prev) => ({
-        ...prev,
-        [post._id]: true,
-      }));
 
       setReportingPostId(null);
       setReportMessage("");

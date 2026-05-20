@@ -6,7 +6,7 @@ import {
     createImpactCard,
     updateImpactCard,
     deleteImpactCard
-} from "./ImpactAPI";
+} from "./impactAPI";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ImpactAdmin({ token }: TokenProp) {

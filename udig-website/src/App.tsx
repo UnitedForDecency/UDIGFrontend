@@ -173,7 +173,7 @@ function App() {
                             <Route path="leaders" element={<CommunityAdmin token={token} />} />
                             <Route path="volunteer" element={<VolunteerAdmin token={token } />} />
                             <Route path="issues" element={<IssuesAdmin token={token} />} />
-                            <Route path="images" element={<ImagesAdmin token={token} />} />
+                            <Route path="images" element={<ImagesAdmin />} />
                             <Route path="milestones" element={<MilestonesAdmin token={token} />} />
                             <Route path="leadership" element={<LeadershipAdmin token={token} />} />
                             <Route path="guides" element={<GuidesAdmin token={token} />} />

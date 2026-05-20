@@ -15,6 +15,12 @@ interface NavbarProps {
     onLogout: () => void;
 }
 
+type NavItem = {
+    name: string;
+    href: string;
+    external?: boolean;
+};
+
 export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
     const [openItem, setOpenItem] = useState<MenuItem>(null);
     const closeTimeout = useRef<number | null>(null);
@@ -32,7 +38,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
         }, 200); // 200ms delay
     };
 
-    const navItems = [
+    const navItems: NavItem[] = [
         { name: "Contact", href: "/contact" },
         { name: "Contribute", href: "/contribute" },
     ];

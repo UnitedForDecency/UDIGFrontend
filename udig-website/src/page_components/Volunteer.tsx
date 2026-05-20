@@ -27,7 +27,6 @@ export default function Volunteer() {
     const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
 
     const API_BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL || "http://localhost:3001";
-    const EMAIL_SERVICE_URL = import.meta.env.VITE_EMAIL_SERVICE_URL || "http://localhost:3000";
 
     useEffect(() => {
         const fetchOrgs = async () => {

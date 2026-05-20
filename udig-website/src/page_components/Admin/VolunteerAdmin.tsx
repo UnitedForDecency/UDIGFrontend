@@ -29,6 +29,7 @@ export default function VolunteerAdmin({ token }: TokenProp) {
 
     // Fetch all volunteer orgs in mount
     useEffect(() => {
+        if(!token) return;
         const fetchOrgs = async () => {
             try {
                 const data = await getVolunteerOrgs(token);
@@ -42,6 +43,7 @@ export default function VolunteerAdmin({ token }: TokenProp) {
 
     // Add new org
     const handleAdd = async () => {
+        if(!token) return;
         if (!newOrg.name || !newOrg.category) return alert("Name & Category are required");
         try {
             setLoading(true);
@@ -57,6 +59,7 @@ export default function VolunteerAdmin({ token }: TokenProp) {
 
     // Save edit
     const handleSaveEdit = async () => {
+        if(!token) return;
         if (!editingId) return;
         try {
             await updateVolunteerOrg(editingId, editOrg, token);
@@ -73,6 +76,7 @@ export default function VolunteerAdmin({ token }: TokenProp) {
 
     // Delete org
     const handleDelete = async (id: string) => {
+        if(!token) return;
         if (!window.confirm("Delete this organization permanently?")) return;
         try {
             await deleteVolunteerOrg(id, token);
