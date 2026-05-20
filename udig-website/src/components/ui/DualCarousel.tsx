@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import "@/styles/DualCarousel.css";
+import "@/styles/dualCarousel.css";
 
 interface ImageType {
     _id: string;
