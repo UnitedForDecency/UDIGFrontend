@@ -10,7 +10,6 @@ import { FieldSet, FieldGroup, Field, FieldError } from '@/components/ui/field';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {MarkerClusterer, type Marker} from '@googlemaps/markerclusterer';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import placeholderImage2 from "../assets/Placeholder2.png"
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface User {
@@ -309,7 +308,7 @@ export default function Community() {
                                     <CardContent className="flex flex-col items-center justify-center">
                                         <CardContent className="flex flex-col items-center justify-center">
                                             <img
-                                                src={leader.imageUrl || placeholderImage2}
+                                                src={leader.imageUrl}
                                                 alt={`Image of ${leader.name}`}
                                                 className="w-24 h-24 object-cover rounded-full"
                                             />

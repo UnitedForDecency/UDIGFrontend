@@ -1,13 +1,12 @@
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import { ChevronDown, MenuIcon } from "lucide-react";
-import udigLogo from "../../assets/UDIGLogo.png";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerTrigger } from "./drawer";
 import { Button } from "./button";
 import { Collapsible, CollapsibleTrigger } from "@radix-ui/react-collapsible";
 import { CollapsibleContent } from "./collapsible";
 
-type MenuItem = "about" | "programs" | "get-involved" | null;
+type MenuItem = "about" | "programs" | "get-involved" | "petitions-pledges" | null;
 
 interface NavbarProps {
     isLoggedIn: boolean;
@@ -15,15 +14,45 @@ interface NavbarProps {
     onLogout: () => void;
 }
 
-type NavItem = {
-    name: string;
-    href: string;
-    external?: boolean;
-};
+interface ImageType {
+    id: string;
+    imageData: string;
+    url: string;
+    type: string;
+    section: string;
+    createdAt?: string;
+    mimetype?: string;
+}
 
 export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
     const [openItem, setOpenItem] = useState<MenuItem>(null);
+    const [navbarImages, setNavbarImages] = useState<ImageType[]>([]);
     const closeTimeout = useRef<number | null>(null);
+
+    useEffect(() => {
+        const fetchImages = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/type/navbar`);
+                const data = await res.json();
+                setNavbarImages(formatImages(data));
+            } catch (err) {
+                console.error("Failed to fetch navbar images:", err);
+            }
+        };
+
+        fetchImages();
+    }, []);
+
+    const formatImages = (data: any[]) => {
+        return data
+            .map((img) => ({
+                ...img,
+                url: `data:${img.mimetype || "image/png"};base64,${img.imageData}`,
+            }))
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    };
+
+    const logoImage = navbarImages.find((img) => img.section === "logo") ?? navbarImages[0];
 
     // Opens menu and cancels any pending close
     const openMenu = (item: Exclude<MenuItem, null>) => {
@@ -38,7 +67,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
         }, 200); // 200ms delay
     };
 
-    const navItems: NavItem[] = [
+    const navItems = [
         { name: "Contact", href: "/contact" },
         { name: "Contribute", href: "/contribute" },
     ];
@@ -49,7 +78,11 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                 <nav className="w-full bg-yale-blue px-6 py-3 flex items-center justify-between relative z-50">
                     {/* Logo */}
                     <a href="/" className="flex items-center gap-3">
-                        <img src={udigLogo} alt="UDIG Logo" className="w-12" />
+                        <img
+                            src={logoImage?.url}
+                            alt="UDIG Logo"
+                            className="w-12"
+                        />
                         <div className="text-left">
                             <h3 className="text-porcelain font-bold">UDIG</h3>
                             <h3 className="text-porcelain font-semibold">United for Decency in Government</h3>
@@ -83,6 +116,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                             <li><a href="/about" className="hover:underline">Our Vision and Mission</a></li>
                                             <li><a href="/impact" className="hover:underline">What is UDIG</a></li>
                                             <li><a href="/about/leadership" className="hover:underline">Leadership</a></li>
+                                            <li><a href="/about/office-registry" className="hover:underline">Office Registry</a></li>
                                             <li><a href="/about/history" className="hover:underline">Our Story</a></li>
                                             <li><a href="/about/press-coverage" className="hover:underline">Press Coverage</a></li>
                                         </ul>
@@ -137,7 +171,6 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                         <ul className="flex flex-col gap-2">
                                             <li><a href="/get-involved/volunteer" className="hover:underline">Volunteer</a></li>
                                             <li><a href="/get-involved/events" className="hover:underline">Events</a></li>
-                                            <li><a href="/get-involved/petitions" className="hover:underline">Petitions and Campaigns</a></li>
                                             <li><a href="/get-involved/community" className="hover:underline">Community</a></li>
                                             <li><a href="/get-involved/socialmedia" className="hover:underline">Social Media</a></li>
                                             <li><a href="/get-involved/guides" className="hover:underline">Guides</a></li>
@@ -145,23 +178,54 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                     </NavigationMenu.Content>
                                 </NavigationMenu.Item>
 
+
+                                {/* PETITIONS & PLEDGES */}
+                                <NavigationMenu.Item
+                                    onMouseEnter={() => openMenu("petitions-pledges")}
+                                    onMouseLeave={closeMenu}
+                                >
+                                    <NavigationMenu.Trigger className="flex items-center gap-1 cursor-pointer">
+                                        <a href="/petitions" className="hover:underline">
+                                            Petitions & Pledges
+                                        </a>
+                                        <ChevronDown size={16} />
+                                    </NavigationMenu.Trigger>
+
+                                    <NavigationMenu.Content
+                                        onMouseEnter={() => openMenu("petitions-pledges")}
+                                        onMouseLeave={closeMenu}
+                                        className={`absolute mt-2 pt-2 bg-white text-graphite rounded-md shadow-lg p-3 min-w-[200px] transition-all duration-200 ${
+                                            openItem === "petitions-pledges"
+                                                ? "opacity-100 translate-y-0 pointer-events-auto"
+                                                : "opacity-0 -translate-y-2 pointer-events-none"
+                                        }`}
+                                    >
+                                        <ul className="flex flex-col gap-2">
+                                            <li>
+                                                <a href="/petition-pledge/petition" className="hover:underline">
+                                                    Decency Petition
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="/petition-pledge/pledge" className="hover:underline">
+                                                    Decency Pledge
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="/petition-pledge/certification" className="hover:underline">
+                                                    Decency Certifications
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </NavigationMenu.Content>
+                                </NavigationMenu.Item>
+
                                 {/* Normal Links */}
                                 {navItems.map((item) => (
                                     <NavigationMenu.Item key={item.name}>
-                                        {item.external ? (
-                                            <NavigationMenu.Link
-                                                href={item.href}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="hover:underline font-semibold"
-                                            >
-                                                {item.name}
-                                            </NavigationMenu.Link>
-                                        ) : (
-                                            <NavigationMenu.Link href={item.href} className="hover:underline">
-                                                {item.name}
-                                            </NavigationMenu.Link>
-                                        )}
+                                        <NavigationMenu.Link href={item.href} className="hover:underline">
+                                            {item.name}
+                                        </NavigationMenu.Link>
                                     </NavigationMenu.Item>
                                 ))}
                             </NavigationMenu.List>
@@ -169,18 +233,16 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
         \
                         {/* Login / Admin Links */}
                         {!isLoggedIn ? (
-                            <a href="/login" className="font-semibold hover:underline">Login</a>
+                            <a href="/login">Login</a>
                         ) : (
                             <>
                                 {isAdmin ? (
-                                    <a href="/admin" className="font-semibold hover:underline">Admin Dashboard</a>
+                                    <a href="/admin">Admin Dashboard</a>
                                 ) : (
-                                    <a href="/" className="font-semibold hover:underline">My Account</a>
+                                    <a href="/">My Account</a>
                                 )}
-                                <button
-                                    onClick={onLogout}
-                                    className="ml-3 font-semibold hover:underline text-red-500"
-                                >
+
+                                <button onClick={onLogout} className="text-red-500">
                                     Logout
                                 </button>
                             </>
@@ -223,6 +285,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                             <li><a href="/impact" className="hover:underline">What is UDIG</a></li>
                                             <li><a href="/about/leadership" className="hover:underline">Leadership</a></li>
                                             <li><a href="/about/history" className="hover:underline">Our Story</a></li>
+                                            <li><a href="/about/press-coverage" className="hover:underline">Press Coverage</a></li>
                                         </ul>
                                     </CollapsibleContent>
                                 </Collapsible>
@@ -251,9 +314,26 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                             <li><a href="/get-involved/events" className="hover:underline">Events</a></li>
                                             <li><a href="/get-involved/petitions" className="hover:underline">Petitions and Campaigns</a></li>
                                             <li><a href="/get-involved/community" className="hover:underline">Community</a></li>
+                                            <li><a href="/get-involved/socialmedia" className="hover:underline">Social Media</a></li>
+                                            <li><a href="/get-involved/guides" className="hover:underline">Guides</a></li>
                                         </ul>
                                     </CollapsibleContent>
                                 </Collapsible>
+
+                                <Collapsible>
+                                <CollapsibleTrigger className="flex pt-2 px-5 min-w-[30vw]">
+                                    Petitions & Pledges
+                                </CollapsibleTrigger>
+
+                                <CollapsibleContent>
+                                    <ul className="flex flex-col gap-2 p-5 pt-2 ml-4">
+                                        <li><a href="/petitions" className="hover:underline">View Petitions</a></li>
+                                        <li><a href="/petitions/create" className="hover:underline">Start a Petition</a></li>
+                                        <li><a href="/pledges" className="hover:underline">Take a Pledge</a></li>
+                                        <li><a href="/pledges/create" className="hover:underline">Create a Pledge</a></li>
+                                    </ul>
+                                </CollapsibleContent>
+                            </Collapsible>
 
                                 {/* Normal Links */}
                                 <div className="flex-col flex px-5 pt-2">
@@ -287,7 +367,11 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                             <h3 className="text-porcelain font-bold">UDIG</h3>
                             <h3 className="text-porcelain font-semibold">United for Decency in Government</h3>
                         </div>
-                        <img src={udigLogo} alt="UDIG Logo" className="w-12" />
+                        <img
+                            src={logoImage?.url}
+                            alt="UDIG Logo"
+                            className="w-12"
+                        />
                     </a>
                 </nav>
             </div>
