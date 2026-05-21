@@ -1,152 +1,163 @@
 import { type TokenProp } from "@/App";
 import { useEffect, useState } from "react";
 import {
-    getVolunteerOrgs,
-    createVolunteerOrg,
-    updateVolunteerOrg,
-    deleteVolunteerOrg,
+    getVolunteerRoles,
+    createVolunteerRole,
+    updateVolunteerRole,
+    deleteVolunteerRole,
+    type VolunteerRole,
 } from "./volunteerAPI";
 
-export type VolunteerOrg = {
-    _id?: string;
-    name: string
-    description: string;
-    link: string;
-    category: string;
-};
-
 export default function VolunteerAdmin({ token }: TokenProp) {
-    const [orgs, setOrgs] = useState<VolunteerOrg[]>([]);
-    const [newOrg, setNewOrg] = useState<VolunteerOrg>({
-        name: "",
-        description: "",
-        link: "",
-        category: "",
+    const [roles, setRoles] = useState<VolunteerRole[]>([]);
+    const [newRole, setNewRole] = useState({
+        role: "",
     });
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editOrg, setEditOrg] = useState<Partial<VolunteerOrg>>({});
-    const [loading, setLoading] = useState(false);
 
-    // Fetch all volunteer orgs in mount
+    const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
+    const [editRole, setEditRole] = useState<Partial<VolunteerRole>>({});
+
+    const [loadingRole, setLoadingRole] = useState(false);
+
     useEffect(() => {
-        if(!token) return;
-        const fetchOrgs = async () => {
+        if (!token) return;
+
+        const fetchData = async () => {
             try {
-                const data = await getVolunteerOrgs(token);
-                setOrgs(Array.isArray(data) ? data : []);
+                const roleData = await getVolunteerRoles();
+                setRoles(Array.isArray(roleData) ? roleData : []);
             } catch (err) {
-                console.error("Failed to fetch volunteer orgs:", err);
+                console.error("Failed to fetch volunteer roles:", err);
             }
         };
-        fetchOrgs();
+
+        fetchData();
     }, [token]);
 
-    // Add new org
-    const handleAdd = async () => {
-        if(!token) return;
-        if (!newOrg.name || !newOrg.category) return alert("Name & Category are required");
+    const handleAddRole = async () => {
+        if (!token) return;
+
+        if (!newRole.role.trim()) {
+            alert("Role role is required");
+            return;
+        }
+
         try {
-            setLoading(true);
-            const res = await createVolunteerOrg(newOrg, token);
-            setOrgs((prev) => [...prev, {_id: res.data._id, ...newOrg}]);
+            setLoadingRole(true);
+            const res = await createVolunteerRole(
+                {
+                    role: newRole.role.trim(),
+                },
+                token
+            );
+
+            const created = res?.data ?? res;
+            setRoles((prev) => [...prev, created]);
+            setNewRole({
+                role: "",
+            });
         } catch (err) {
             console.error(err);
-            alert("Failed to add org");
+            alert("Failed to add role");
         } finally {
-            setLoading(false);
+            setLoadingRole(false);
         }
     };
 
-    // Save edit
-    const handleSaveEdit = async () => {
-        if(!token) return;
-        if (!editingId) return;
+    const handleSaveRole = async () => {
+        if (!token || !editingRoleId) return;
+
+        const trimmedRole = (editRole.role ?? "").trim();
+
+        if (!trimmedRole) {
+            alert("Role role is required");
+            return;
+        }
+
         try {
-            await updateVolunteerOrg(editingId, editOrg, token);
-            setOrgs((prev) =>
-                prev.map((o) => (o._id === editingId ? {...o, ...editOrg} : o))
-        );
-        setEditingId(null);
-        setEditOrg({});
+            await updateVolunteerRole(
+                editingRoleId,
+                {
+                    role: trimmedRole,
+                },
+                token
+            );
+
+            setRoles((prev) =>
+                prev.map((r) =>
+                    r._id === editingRoleId
+                        ? {
+                              ...r,
+                              role: trimmedRole,
+                          }
+                        : r
+                )
+            );
+
+            setEditingRoleId(null);
+            setEditRole({});
         } catch (err) {
             console.error(err);
-            alert("Failed to save edit");
+            alert("Failed to save role");
         }
     };
 
-    // Delete org
-    const handleDelete = async (id: string) => {
-        if(!token) return;
-        if (!window.confirm("Delete this organization permanently?")) return;
+    const handleDeleteRole = async (id: string) => {
+        if (!token) return;
+
+        if (!window.confirm("Delete this role permanently?")) return;
+
         try {
-            await deleteVolunteerOrg(id, token);
-            setOrgs((prev) => prev.filter((o) => o._id !== id));
+            await deleteVolunteerRole(id, token);
+            setRoles((prev) => prev.filter((r) => r._id !== id));
         } catch (err) {
             console.error(err);
-            alert("Failed to delete org");
+            alert("Failed to delete role");
         }
     };
 
     return (
-<div>
+        <div>
             <h2 className="text-2xl font-semibold mb-4 text-[var(--color-yale-blue)]">
-                Volunteer Organizations
+                Volunteer Roles
             </h2>
 
-            {/* Org list */}
             <div className="space-y-2 mb-8">
-                {orgs.length === 0 ? (
-                    <p>No volunteer organizations found.</p>
+                {roles.length === 0 ? (
+                    <p>No volunteer roles found.</p>
                 ) : (
-                    orgs.map((org) => {
-                        const isEditing = editingId === org._id;
+                    roles.map((role, index) => {
+                        const isEditing = editingRoleId === role._id;
+
                         return (
                             <div
-                                key={org._id ?? Math.random()}
+                                key={role._id ?? `${role.role}-${index}`}
                                 className="flex flex-wrap items-center gap-2 bg-[var(--color-misty-linen)] p-3 rounded border border-[var(--color-stone-taupe)]"
                             >
                                 {isEditing ? (
                                     <>
                                         <input
-                                            value={editOrg.name ?? ""}
-                                            placeholder="Name"
+                                            value={editRole.role ?? ""}
+                                            placeholder="Role role"
                                             onChange={(e) =>
-                                                setEditOrg({ ...editOrg, name: e.target.value })
-                                            }
-                                            className="border p-1 rounded"
-                                        />
-                                        <input
-                                            value={editOrg.category ?? ""}
-                                            placeholder="Category"
-                                            onChange={(e) =>
-                                                setEditOrg({ ...editOrg, category: e.target.value })
-                                            }
-                                            className="border p-1 rounded"
-                                        />
-                                        <input
-                                            value={editOrg.description ?? ""}
-                                            placeholder="Description"
-                                            onChange={(e) =>
-                                                setEditOrg({ ...editOrg, description: e.target.value })
-                                            }
-                                            className="border p-1 rounded"
-                                        />
-                                        <input
-                                            value={editOrg.link ?? ""}
-                                            placeholder="Link"
-                                            onChange={(e) =>
-                                                setEditOrg({ ...editOrg, link: e.target.value })
+                                                setEditRole({
+                                                    ...editRole,
+                                                    role: e.target.value,
+                                                })
                                             }
                                             className="border p-1 rounded"
                                         />
                                         <button
-                                            onClick={handleSaveEdit}
+                                            onClick={handleSaveRole}
                                             className="text-green-700 font-semibold"
                                         >
                                             Save
                                         </button>
                                         <button
-                                            onClick={() => setEditingId(null)}
+                                            onClick={() => {
+                                                setEditingRoleId(null);
+                                                setEditRole({});
+                                            }}
                                             className="text-gray-600"
                                         >
                                             Cancel
@@ -155,19 +166,21 @@ export default function VolunteerAdmin({ token }: TokenProp) {
                                 ) : (
                                     <>
                                         <span className="flex-1">
-                                            {org.name} ({org.category})
+                                            {role.role}
                                         </span>
                                         <button
                                             onClick={() => {
-                                                setEditingId(org._id!);
-                                                setEditOrg(org);
+                                                setEditingRoleId(role._id ?? null);
+                                                setEditRole(role);
                                             }}
                                             className="text-blue-600 text-sm"
                                         >
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(org._id!)}
+                                            onClick={() =>
+                                                role._id && handleDeleteRole(role._id)
+                                            }
                                             className="text-red-600 text-sm"
                                         >
                                             Delete
@@ -180,43 +193,25 @@ export default function VolunteerAdmin({ token }: TokenProp) {
                 )}
             </div>
 
-            {/* Add new org */}
             <h3 className="text-lg font-semibold mb-2 text-[var(--color-yale-blue)]">
-                Add New Volunteer Organization
+                Add New Volunteer Role
             </h3>
+
             <div className="flex flex-wrap gap-2">
                 <input
-                    placeholder="Name"
-                    value={newOrg.name}
-                    onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
-                    className="border p-2 rounded"
-                />
-                <input
-                    placeholder="Category"
-                    value={newOrg.category}
-                    onChange={(e) => setNewOrg({ ...newOrg, category: e.target.value })}
-                    className="border p-2 rounded"
-                />
-                <input
-                    placeholder="Description"
-                    value={newOrg.description}
+                    placeholder="Role role"
+                    value={newRole.role}
                     onChange={(e) =>
-                        setNewOrg({ ...newOrg, description: e.target.value })
+                        setNewRole({ ...newRole, role: e.target.value })
                     }
                     className="border p-2 rounded"
                 />
-                <input
-                    placeholder="Link"
-                    value={newOrg.link}
-                    onChange={(e) => setNewOrg({ ...newOrg, link: e.target.value })}
-                    className="border p-2 rounded"
-                />
                 <button
-                    onClick={handleAdd}
-                    disabled={loading}
+                    onClick={handleAddRole}
+                    disabled={loadingRole}
                     className="bg-[var(--color-brick-ember)] text-[var(--color-porcelain)] px-4 py-2 rounded"
                 >
-                    {loading ? "Adding..." : "Add Organization"}
+                    {loadingRole ? "Adding..." : "Add Role"}
                 </button>
             </div>
         </div>

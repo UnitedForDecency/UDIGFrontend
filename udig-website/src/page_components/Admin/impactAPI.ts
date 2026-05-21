@@ -1,10 +1,10 @@
 import axios from "axios";
 
 export type ImpactCard = {
-    _id: string;
+    id: string;
     title: string;
+    summary: string;
     description: string;
-    details: string;
 }
 
 const API_BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL + "/api";
@@ -28,7 +28,7 @@ export const getImpactCards = async (): Promise<ImpactCard[]> => {
 };
 
 export const createImpactCard = async (
-    card: Omit<ImpactCard, "_id">,
+    card: Omit<ImpactCard, "id">,
     token: string
 ) => {
     try {
@@ -37,7 +37,6 @@ export const createImpactCard = async (
                 Authorization: `Bearer ${token}`,
             },
         });
-        console.log("Create response:", response.data);
         return response;
     } catch (error) {
         console.error("Create card error:", error);

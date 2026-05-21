@@ -9,7 +9,7 @@ interface Post {
     title: string;
     contents: string;
     description: string;
-    dateUploaded: Date;
+    createdAt: string;
 }
 
 export default function Issues() {
@@ -63,16 +63,23 @@ export default function Issues() {
     async function deletePost(id: string, title: string) {
         if (window.confirm("Delete this post permanently? " + title)) {
             const url = import.meta.env.VITE_MONGO_CONTROLLER_URL;
+
             const authHeaders = {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             };
 
             try {
                 await axios.delete(`${url}/issues/${id}`, authHeaders);
+
                 setPosts((prev) => prev.filter((p) => p._id !== id));
             } catch (err: any) {
                 console.error("Delete failed:", err);
-                alert("Failed to delete post: " + err.response.data.message);
+                alert(
+                    "Failed to delete post: " +
+                        (err.response?.data?.message || err.message)
+                );
             }
         }
     }
@@ -122,21 +129,22 @@ export default function Issues() {
                                 </p>
 
                                 <p className="text-lg">{post.description}</p>
-
-                                <p>
-                                    Uploaded {new Date(post.dateUploaded).toLocaleDateString()}
-                                </p>
+                                <p> Uploaded {new Date(post.createdAt).toLocaleDateString()} </p>
                             </div>
 
                             {/* ADMIN ACTIONS */}
                             {isAdmin && (
                                 <div className="m-3 flex items-center gap-3">
-                                    {post.title !== "Decency: UDIG's Goal" && (
+                                    {post.title !==
+                                        "Decency: UDIG's Goal" && (
                                         <Button
                                             className="text-brick-ember bg-white hover:bg-porcelain"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                deletePost(post._id, post.title);
+                                                deletePost(
+                                                    post._id,
+                                                    post.title
+                                                );
                                             }}
                                         >
                                             <DeleteIcon />
@@ -144,7 +152,11 @@ export default function Issues() {
                                     )}
 
                                     <a
-                                        href={"/programs/issues/" + post._id + "/edit"}
+                                        href={
+                                            "/programs/issues/" +
+                                            post._id +
+                                            "/edit"
+                                        }
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <EditIcon className="text-black bg-white hover:bg-porcelain" />
@@ -158,7 +170,9 @@ export default function Issues() {
                 {/* PAGINATION */}
                 <div className="flex justify-center items-center gap-6 mb-10">
                     <button
-                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 0))}
+                        onClick={() =>
+                            setCurrentPage((p) => Math.max(p - 1, 0))
+                        }
                         disabled={currentPage === 0}
                         className="px-5 py-2 rounded-full bg-muted text-muted-foreground hover:underline disabled:opacity-40"
                     >
@@ -171,7 +185,9 @@ export default function Issues() {
 
                     <button
                         onClick={() =>
-                            setCurrentPage((p) => Math.min(p + 1, totalPages - 1))
+                            setCurrentPage((p) =>
+                                Math.min(p + 1, totalPages - 1)
+                            )
                         }
                         disabled={currentPage === totalPages - 1}
                         className="px-5 py-2 rounded-full bg-muted text-muted-foreground hover:underline disabled:opacity-40"
@@ -190,7 +206,6 @@ export default function Issues() {
                             onClick={(e) => e.stopPropagation()}
                             className="bg-white w-[90vw] max-w-4xl max-h-[85vh] overflow-y-auto rounded-2xl shadow-xl p-8 relative"
                         >
-                            {/* CLOSE */}
                             <button
                                 onClick={() => setIsModalOpen(false)}
                                 className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl"
@@ -198,17 +213,15 @@ export default function Issues() {
                                 ✕
                             </button>
 
-                            {/* HEADER */}
                             <h2 className="text-3xl font-bold text-yale-blue mb-4">
                                 {selectedPost.title}
                             </h2>
 
-                            <p className="text-sm text-gray-500 mb-6">
-                                Uploaded{" "}
-                                {new Date(selectedPost.dateUploaded).toLocaleDateString()}
+                            <p className="text-sm text-gray-500 mb-6"> 
+                                Uploaded{" "} 
+                                {new Date(selectedPost.createdAt).toLocaleDateString()} 
                             </p>
 
-                            {/* CONTENT */}
                             <article className="prose max-w-none whitespace-pre-wrap">
                                 {selectedPost.contents}
                             </article>

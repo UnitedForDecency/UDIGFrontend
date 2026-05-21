@@ -3,7 +3,24 @@ import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useEffect } from "react";
 import axios from "axios";
 
-const Sections = ["books", "essays", "events", "petitions", "impact", "leaders", "volunteer", "issues", "images", "milestones", "leadership", "guides", "press-coverage", "reports"] as const;
+
+const Sections = [
+    "books",
+    "essays",
+    "contests",
+    "events",
+    "petitions-and-pledges",
+    "impact",
+    "users",
+    "elected-officials/candidates",
+    "volunteer",
+    "issues",
+    "images",
+    "milestones",
+    "guides",
+    "press-coverage",
+    "reports"
+] as const;
 
 export default function AdminDashboard({ token }: TokenProp) {
     const location = useLocation();
@@ -18,18 +35,34 @@ export default function AdminDashboard({ token }: TokenProp) {
             }
         }
 
-        return Sections[0];
+        return null;
     }
 
-    const activeSection: string = getActiveSection();
+    const activeSection: any = getActiveSection();
+    
 
     const checkAdminStatus = async () => {
-        if(!token) navigate(`/home`);
+        if (!token) {
+            navigate("/home");
+            return;
+        }
+
         try {
-            const userDataRes = await axios.get(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/accounts/token/${token}`);
-            if(!userDataRes.data.isAdmin) navigate(`/home`);
+            const userDataRes = await axios.get(
+                `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/accounts/me`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (userDataRes.data.role !== "ADMIN") {
+                navigate("/home");
+            }
         } catch (err) {
-            navigate(`/home`);
+            console.error("AUTH ERROR:", err);
+            navigate("/home");
         }
     };
 

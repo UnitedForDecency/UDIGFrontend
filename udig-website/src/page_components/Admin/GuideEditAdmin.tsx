@@ -47,7 +47,6 @@ export default function GuideEditAdmin() {
     fetch(`${API_BASE}/guides/${id}`)
         .then((res) => res.json())
         .then((data) => {
-            console.log("guide data:", data);  // add this
             setGuide(data);
             setTitle(data.title);
             setDescription(data.description);

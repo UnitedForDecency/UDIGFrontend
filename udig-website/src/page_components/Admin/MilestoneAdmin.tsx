@@ -8,15 +8,16 @@ import {
     deleteMilestone,
 } from "./MilestoneAPI";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import axios from "axios";
 
 export default function AdminMilestone({ token }: TokenProp) {
     const [milestones, setMilestones] = useState<Milestone[]>([]);
-    const [newMilestone, setNewMilestone] = useState<Omit<Milestone, "_id">>({
+    const [newMilestone, setNewMilestone] = useState<Omit<Milestone, "id">>({
         year: "",
         title: "",
+        summary: "",
         description: "",
-        details: "",
-        imageUrl: "",
+        imageId: "",
     });
     const [imagePreview, setImagePreview] = useState<string>("");
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -26,6 +27,8 @@ export default function AdminMilestone({ token }: TokenProp) {
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const editFileInputRef = useRef<HTMLInputElement>(null);
+    const [file, setFile] = useState<File | null>(null);
+    const [images, setImages] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (!token) return;
@@ -37,8 +40,9 @@ export default function AdminMilestone({ token }: TokenProp) {
                     setError("Failed to load milestones.");
                     return;
                 }
-                setMilestones(data.filter((m) => m._id));
+                setMilestones(data.filter((m) => m.id));
                 setError(null);
+                setFile(null);
             } catch (err) {
                 console.error("Failed to fetch milestones:", err);
                 setMilestones([]);
@@ -49,31 +53,73 @@ export default function AdminMilestone({ token }: TokenProp) {
     }, [token]);
 
     // Convert uploaded file to base64
-    const handleImageUpload = (
-        file: File,
-        onDone: (base64: string) => void
-    ) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            onDone(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+    const handleImageUpload = (file: File, isEdit = false) => {
+        setFile(file);
+
+        const previewUrl = URL.createObjectURL(file);
+
+        if (isEdit) {
+            setEditImagePreview(previewUrl);
+        } else {
+            setImagePreview(previewUrl);
+        }
     };
 
     const handleAddMilestone = async () => {
-        if (!token) return alert("Cannot add milestone: missing token");
-        if (!newMilestone.year || !newMilestone.title) return alert("Year and Title are required!");
+        if (!token) return alert("Missing token");
+        if (!newMilestone.year || !newMilestone.title) {
+            return alert("Year and Title are required!");
+        }
 
         try {
             setLoading(true);
-            const res = await createMilestone(newMilestone, token);
+
+            let imageId = "";
+
+            if (file) {
+                const formData = new FormData();
+                formData.append("image", file);
+                formData.append("type", "milestone");
+                formData.append("section", newMilestone.year);
+
+                const uploadRes = await axios.post(
+                    `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/upload`,
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                imageId = uploadRes.data?.id || "";
+            }
+
+            const payload = {
+                ...newMilestone,
+                imageId,
+            };
+
+            const res = await createMilestone(payload, token);
             const milestoneId = res?.data?.milestoneId;
-            if (!milestoneId) throw new Error("API did not return milestoneId");
-            setMilestones((prev) => [...prev, { _id: milestoneId, ...newMilestone }]);
-            setNewMilestone({ year: "", title: "", description: "", details: "", imageUrl: "" });
+
+            setMilestones((prev) => [
+                ...prev,
+                { id: milestoneId, ...payload },
+            ]);
+
+            setNewMilestone({
+                year: "",
+                title: "",
+                summary: "",
+                description: "",
+                imageId: "",
+            });
+
+            setFile(null);
             setImagePreview("");
         } catch (err) {
-            console.error("Failed to add milestone:", err);
+            console.error(err);
             alert("Failed to add milestone");
         } finally {
             setLoading(false);
@@ -82,30 +128,109 @@ export default function AdminMilestone({ token }: TokenProp) {
 
     const handleSaveEdit = async () => {
         if (!token || !editingId) return;
+
         try {
-            await updateMilestone(editingId, editMilestone, token);
+            let imageId = editMilestone.imageId; // default = existing image
+
+
+            if (file) {
+                const formData = new FormData();
+                formData.append("image", file);
+                formData.append("type", "milestone");
+                formData.append("section", editMilestone.year || "");
+
+                const uploadRes = await axios.post(
+                    `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/upload`,
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                imageId = uploadRes.data?.id || imageId;
+
+                // (optional) delete old image
+                if (editMilestone.imageId) {
+                    await axios.delete(
+                        `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/${editMilestone.imageId}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    );
+                }
+            }
+
+            const updated = {
+                ...editMilestone,
+                imageId,
+            };
+
+            await updateMilestone(editingId, updated, token);
+
             setMilestones((prev) =>
-                prev.map((m) => (m._id === editingId ? { ...m, ...editMilestone } : m))
+                prev.map((m) =>
+                    m.id === editingId ? { ...m, ...updated } : m
+                )
             );
+
             setEditingId(null);
             setEditMilestone({});
             setEditImagePreview("");
+            setFile(null);
+
         } catch (err) {
             console.error("Failed to save edit:", err);
             alert("Failed to save edit");
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: string, imageId: string) => {
         if (!token) return;
         if (!window.confirm("Delete this milestone permanently?")) return;
         try {
-            await deleteMilestone(id, token);
-            setMilestones((prev) => prev.filter((m) => m._id !== id));
+            await deleteMilestone(id, imageId, token);
+            setMilestones((prev) => prev.filter((m) => m.id !== id));
         } catch (err) {
             console.error("Delete failed:", err);
             alert("Failed to delete milestone");
         }
+    };
+
+    useEffect(() => {
+        const loadImages = async () => {
+            const newImages: Record<string, string> = {};
+
+            for (const m of milestones) {
+                if (!m.imageId) continue;
+
+                try {
+                    const res = await fetch(
+                        `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/${m.imageId}`
+                    );
+                    const data = await res.json();
+
+                    newImages[m.imageId] = formatImages(data);
+                } catch (err) {
+                    console.error("Failed to fetch image:", err);
+                }
+            }
+
+            setImages(newImages);
+        };
+
+        if (milestones.length > 0) {
+            loadImages();
+        }
+    }, [milestones]);
+
+    const formatImages = (data: any): string => {
+        if (!data) return "";
+
+        return `data:${data.mimetype || "image/png"};base64,${data.imageData}`;
     };
 
     if (!token) {
@@ -115,7 +240,6 @@ export default function AdminMilestone({ token }: TokenProp) {
             </div>
         );
     }
-
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -157,25 +281,25 @@ export default function AdminMilestone({ token }: TokenProp) {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Description <span className="text-red-500">*</span>
+                                summary <span className="text-red-500">*</span>
                             </label>
                             <input
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Brief summary shown on the timeline card"
-                                value={newMilestone.description}
-                                onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
+                                value={newMilestone.summary}
+                                onChange={(e) => setNewMilestone({ ...newMilestone, summary: e.target.value })}
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Details <span className="text-red-500">*</span>
+                                description <span className="text-red-500">*</span>
                             </label>
                             <textarea
                                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Full content displayed in the modal popup"
                                 rows={5}
-                                value={newMilestone.details}
-                                onChange={(e) => setNewMilestone({ ...newMilestone, details: e.target.value })}
+                                value={newMilestone.description}
+                                onChange={(e) => setNewMilestone({ ...newMilestone, description: e.target.value })}
                             />
                         </div>
 
@@ -213,10 +337,7 @@ export default function AdminMilestone({ token }: TokenProp) {
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
-                                    handleImageUpload(file, (base64) => {
-                                        setImagePreview(base64);
-                                        setNewMilestone({ ...newMilestone, imageUrl: base64 });
-                                    });
+                                    handleImageUpload(file);
                                 }}
                             />
                         </div>
@@ -227,8 +348,8 @@ export default function AdminMilestone({ token }: TokenProp) {
                                 loading ||
                                 !newMilestone.year ||
                                 !newMilestone.title ||
-                                !newMilestone.description ||
-                                !newMilestone.details
+                                !newMilestone.summary ||
+                                !newMilestone.description
                             }
                             className="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-lg"
                         >
@@ -270,10 +391,10 @@ export default function AdminMilestone({ token }: TokenProp) {
                     ) : (
                         <div className="space-y-4">
                             {milestones.map((milestone) => {
-                                const isEditing = editingId === milestone._id;
+                                const isEditing = editingId === milestone.id;
                                 return (
                                     <div
-                                        key={milestone._id}
+                                        key={milestone.id}
                                         className="border border-gray-200 rounded-lg p-5 bg-white hover:shadow-md transition-shadow"
                                     >
                                         {isEditing ? (
@@ -297,20 +418,20 @@ export default function AdminMilestone({ token }: TokenProp) {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">summary</label>
                                                     <input
                                                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        value={editMilestone.description ?? milestone.description}
-                                                        onChange={(e) => setEditMilestone({ ...editMilestone, description: e.target.value })}
+                                                        value={editMilestone.summary ?? milestone.summary}
+                                                        onChange={(e) => setEditMilestone({ ...editMilestone, summary: e.target.value })}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Details</label>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">description</label>
                                                     <textarea
                                                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        value={editMilestone.details ?? milestone.details}
+                                                        value={editMilestone.description ?? milestone.description}
                                                         rows={4}
-                                                        onChange={(e) => setEditMilestone({ ...editMilestone, details: e.target.value })}
+                                                        onChange={(e) => setEditMilestone({ ...editMilestone, description: e.target.value })}
                                                     />
                                                 </div>
 
@@ -321,14 +442,16 @@ export default function AdminMilestone({ token }: TokenProp) {
                                                         className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 transition-colors"
                                                         onClick={() => editFileInputRef.current?.click()}
                                                     >
-                                                        {editImagePreview || milestone.imageUrl ? (
+                                                        {editImagePreview || milestone.imageId ? (
                                                             <div className="space-y-2">
                                                                 <img
-                                                                    src={editImagePreview || milestone.imageUrl}
+                                                                    src={
+                                                                        editImagePreview ||
+                                                                        (milestone.imageId ? images[milestone.imageId] : "")
+                                                                    }
                                                                     alt="Preview"
                                                                     className="w-full h-40 object-cover rounded-md mx-auto"
                                                                 />
-                                                                <p className="text-sm text-gray-500">Click to change image</p>
                                                             </div>
                                                         ) : (
                                                             <div className="space-y-1">
@@ -345,10 +468,7 @@ export default function AdminMilestone({ token }: TokenProp) {
                                                         onChange={(e) => {
                                                             const file = e.target.files?.[0];
                                                             if (!file) return;
-                                                            handleImageUpload(file, (base64) => {
-                                                                setEditImagePreview(base64);
-                                                                setEditMilestone({ ...editMilestone, imageUrl: base64 });
-                                                            });
+                                                            handleImageUpload(file, true);
                                                         }}
                                                     />
                                                 </div>
@@ -375,25 +495,25 @@ export default function AdminMilestone({ token }: TokenProp) {
                                         ) : (
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex items-start gap-4 flex-1 min-w-0">
-                                                    {milestone.imageUrl && (
+                                                    {milestone.imageId && images[milestone.imageId] && (
                                                         <img
-                                                            src={milestone.imageUrl}
+                                                            src={images[milestone.imageId]}
                                                             alt={milestone.title}
-                                                            className="w-20 h-16 object-cover rounded-md flex-shrink-0"
+                                                            className="w-20 h-16 object-cover rounded-md"
                                                         />
                                                     )}
                                                     <div className="flex-1 min-w-0">
                                                         <h3 className="font-semibold text-lg text-gray-900 mb-1">
                                                             {milestone.year} — {milestone.title}
                                                         </h3>
-                                                        <p className="text-sm text-gray-600 mb-1">{milestone.description}</p>
-                                                        <p className="text-xs text-gray-500 line-clamp-2">{milestone.details}</p>
+                                                        <p className="text-sm text-gray-600 mb-1">{milestone.summary}</p>
+                                                        <p className="text-xs text-gray-500 line-clamp-2">{milestone.description}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2 flex-shrink-0">
                                                     <button
                                                         onClick={() => {
-                                                            setEditingId(milestone._id);
+                                                            setEditingId(milestone.id);
                                                             setEditMilestone(milestone);
                                                             setEditImagePreview("");
                                                         }}
@@ -402,7 +522,9 @@ export default function AdminMilestone({ token }: TokenProp) {
                                                         Edit
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(milestone._id)}
+                                                        onClick={() =>
+                                                            milestone.imageId && handleDelete(milestone.id, milestone.imageId)
+                                                        }
                                                         className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
                                                     >
                                                         Delete

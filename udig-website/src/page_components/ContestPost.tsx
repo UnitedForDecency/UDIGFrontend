@@ -20,10 +20,9 @@ interface Contest {
     topic: string;
     description: string;
     prize: number;
-    ongoing: boolean;
     winner: string;
-    startdate: string;
-    enddate: string;
+    startdate: Date;
+    enddate: Date;
 }
 
 export default function ContestPost({ token }: TokenProp) {
@@ -43,10 +42,19 @@ export default function ContestPost({ token }: TokenProp) {
         headers: { Authorization: `Bearer ${token}` }
     };
 
+    const contestIsOngoing = (startdate: Date, enddate: Date) => {
+        const currentDate = new Date();
+
+        return (startdate <= currentDate) && (enddate > currentDate);
+    };
+
     useEffect(() => {
         fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/essaycontest/contests/${id}`)
             .then((res) => res.json())
             .then((data) => {
+                if(data.startdate != undefined) data.startdate = new Date(data.startdate);
+                if(data.enddate != undefined) data.enddate = new Date(data.enddate);
+
                 setContest(data);
                 setLoading(false);
             });
@@ -108,7 +116,7 @@ export default function ContestPost({ token }: TokenProp) {
     };
 
     if(loading) return <p>Loading...</p>;
-    if(!contest) return <p>Contest not found.</p>;
+    if(contest == null) return <p>Contest not found.</p>;
 
     return (
         <section>
@@ -116,13 +124,13 @@ export default function ContestPost({ token }: TokenProp) {
                 <div className="bg-white w-full shadow-2xl justify-items-start max-w-[75vw] rounded-4xl m-5 p-10 px-15">
                     <h1 className="text-5xl font-bold underline decoration-brick-ember text-yale-blue mb-5">{contest.title}</h1>
                     <p className="mb-2 text-lg">
-                        Topic: {contest.topic} - Started: {new Date(contest.startdate).toDateString()} - {contest.ongoing ? (
-                            "Still Ongoing"
+                        Topic: {contest.topic} - Started: {contest.startdate.toLocaleDateString()} - {contestIsOngoing(contest.startdate, contest.enddate) ? (
+                            "Ends:"
                         ) : (
-                            "Ended: " + new Date(contest.enddate).toDateString()
-                        )}
+                            "Ended:"
+                        )} {contest.enddate.toLocaleDateString()}
                     </p>
-                    <p className="mb-10 text-lg">Prize: {contest.prize.toLocaleString(undefined, {currency: "USD", style: "currency"})}</p>
+                    <p className="mb-10 text-lg">Prize: {contest.prize.toLocaleString(undefined, {style: "currency", currency: "USD"})}</p>
                     <article
                         className="blog-post wrap-break-word"
                         dangerouslySetInnerHTML={{
@@ -132,15 +140,19 @@ export default function ContestPost({ token }: TokenProp) {
                             })
                         }}
                     />
-                    {token !== null ? (
-                        <Button
-                            className="mt-5 bg-burnt-crimson"
-                            onClick={() => {setSubmitEssayVisible(true)}}
-                        >
-                            Submit an Essay
-                        </Button>
+                    {contestIsOngoing(contest.startdate, contest.enddate) ? (
+                        token !== null ? (
+                            <Button
+                                className="mt-5 bg-burnt-crimson"
+                                onClick={() => {setSubmitEssayVisible(true)}}
+                            >
+                                Submit an Essay
+                            </Button>
+                        ) : (
+                            <p className="mt-5"><strong>You must be logged in to submit an essay</strong></p>
+                        )
                     ) : (
-                        <p className="mt-5"><strong>You must be logged in to submit an essay</strong></p>
+                        <p className="mt-5"><strong>This contest has ended</strong></p>
                     )}
                 </div>
                 {(token !== null && submitEssayVisible) && (

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import "@/styles/dualCarousel.css";
+import "@/styles/DualCarousel.css";
 
 interface ImageType {
     _id: string;
@@ -18,9 +18,17 @@ export default function DualCarousel({ page }: Props) {
     const [ready, setReady] = useState(false);
 
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images?page=${page}`)
+        fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/section/${page}`)
         .then((res) => res.json())
-        .then((data) => setImages(data));
+        .then((data) => {
+            const formatted = data.map((img: any) => ({
+                _id: img._id,
+                page: img.page,
+                url: `data:image/png;base64,${img.imageData}`
+            }));
+
+            setImages(formatted);
+        });
     }, [page]);
 
     useEffect(() => {

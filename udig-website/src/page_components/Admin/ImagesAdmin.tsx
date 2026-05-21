@@ -14,7 +14,52 @@ export interface ImageType {
 
 /* ---------------- Defaults ---------------- */
 const DEFAULT_PAGE_SECTIONS: Record<string, string[]> = {
-    home: ["headerCarousel"],
+    home: ["MainImage", "CallForDecency", "RoadTrip", "Billboard", "Contests", "Engagement", "Petition", "Pledge Challenges", "Decency Certification"],
+    WhyDecency: [
+        "Carousel",
+        "Gandhi",
+        "CarolynKennedy",
+        "Roosevelt",
+        "JohnAdams",
+        "Clemente",
+        "Carter",
+        "EdwardBrookes",
+        "ToniMorrison",
+        "EleanorRoosevelt",
+        "BariWeiss",
+        "MayaAngelou",
+        "Jesus",
+        "PopeLeo",
+        "JosephSmith",
+        "RichardMouw",
+        "Islam",
+        "Hillel",
+        "IrvingBerlin",
+        "Confucius",
+        "Hamilton",
+        "AndrewJohnson",
+        "JeffersonAdams2",
+        "Polk",
+        "Lincoln",
+        "McCarthy",
+        "USSMaddox",
+        "Lewinsky",
+        "Bush",
+        "Bush2",
+        "Hillary",
+        "Biden",
+        "Trump",
+        "Trump2",
+        "Trump3",
+        "Cabinet",
+        "ThomasPaine",
+        "JamesMadison",
+        "AlexanderHamilton",
+        "HenryClay",
+        "Emerson",
+        "JeffersonAdamsPortrait",
+        "Constitution",
+    ],
     navbar: ["logo"],
     about: ["visionImages", "missionImages", "storyImages"],
     getInvolved: ["getInvolvedHeaderImage", "communityGallery"],
@@ -25,6 +70,7 @@ const DEFAULT_PAGE_SECTIONS: Record<string, string[]> = {
 
 const DEFAULT_PAGE_LABELS: Record<string, string> = {
     home: "Home",
+    WhyDecency: "Why Decency?",
     navbar: "Navbar",
     about: "About",
     getInvolved: "Get Involved",
@@ -34,7 +80,62 @@ const DEFAULT_PAGE_LABELS: Record<string, string> = {
 };
 
 const DEFAULT_SECTION_LABELS: Record<string, Record<string, string>> = {
-    home: { headerCarousel: "Carousel Images" },
+    home: {
+        MainImage: "Main Image",
+        CallForDecency: "Call For Decency",
+        RoadTrip: "Road Trip",
+        Billboard: "Billboard",
+        Contests: "Contests",
+        Engagement: "Engagement",
+        Petition: "Petition",
+        PledgeChallenges: "Pledge Challenges",
+        DecencyCertification: "Decency Certification",
+    },
+    WhyDecency: {
+        Carousel: "Carousel Images",
+        Gandhi: "Gandhi",
+        CarolynKennedy: "Carolyn Kennedy",
+        Roosevelt: "Roosevelt",
+        JohnAdams: "John Adams",
+        Clemente: "Clemente",
+        Carter: "Carter",
+        EdwardBrookes: "Edward Brookes",
+        ToniMorrison: "Toni Morrison",
+        EleanorRoosevelt: "Eleanor Roosevelt",
+        BariWeiss: "Bari Weiss",
+        MayaAngelou: "Maya Angelou",
+        Jesus: "Jesus",
+        PopeLeo: "Pope Leo",
+        JosephSmith: "Joseph Smith",
+        RichardMouw: "Richard Mouw",
+        Islam: "Islam",
+        Hillel: "Hillel",
+        IrvingBerlin: "Irving Berlin",
+        Confucius: "Confucius",
+        Hamilton: "Hamilton",
+        AndrewJohnson: "Andrew Johnson",
+        JeffersonAdams2: "Jefferson Adams 2",
+        Polk: "Polk",
+        Lincoln: "Lincoln",
+        McCarthy: "McCarthy",
+        USSMaddox: "USS Maddox",
+        Lewinsky: "Lewinsky",
+        Bush: "Bush",
+        Bush2: "Bush 2",
+        Hillary: "Hillary",
+        Biden: "Biden",
+        Trump: "Trump",
+        Trump2: "Trump 2",
+        Trump3: "Trump 3",
+        Cabinet: "Cabinet",
+        ThomasPaine: "Thomas Paine",
+        JamesMadison: "James Madison",
+        AlexanderHamilton: "Alexander Hamilton",
+        HenryClay: "Henry Clay",
+        Emerson: "Emerson",
+        JeffersonAdamsPortrait: "Jefferson Adams Portrait",
+        Constitution: "Constitution",
+    },
     navbar: { logo: "Logo" },
     about: {
         visionImages: "Vision Section",
@@ -67,16 +168,17 @@ function PageTab({
     label: string;
     active: boolean;
     onClick: () => void;
-    onRemove: () => void;
 }) {
     return (
-        <div className={`group flex gap-2 pl-3 pr-1 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 whitespace-nowrap
-            ${active
-                ? "bg-amber-700 border-amber-700 text-white shadow-sm"
-                : "bg-stone-100 border-stone-300 text-stone-500 hover:border-amber-600 hover:text-amber-700"
-            }`}
+        <div
+            className={`flex gap-2 pl-3 pr-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 whitespace-nowrap cursor-pointer
+                ${active
+                    ? "bg-amber-700 border-amber-700 text-white shadow-sm"
+                    : "bg-stone-100 border-stone-300 text-stone-500 hover:border-amber-600 hover:text-amber-700"
+                }`}
+            onClick={onClick}
         >
-            <span className="cursor-pointer" onClick={onClick}>{label}</span>
+            {label}
         </div>
     );
 }
@@ -89,16 +191,17 @@ function SectionChip({
     label: string;
     active: boolean;
     onClick: () => void;
-    onRemove: () => void;
 }) {
     return (
-        <div className={`group flex items-center gap-1 pl-3 pr-1 py-1 rounded-full text-xs font-medium border transition-all duration-150 m-0.5
-            ${active
-                ? "bg-amber-700 border-amber-700 text-white"
-                : "bg-white border-stone-300 text-stone-500 hover:border-amber-600 hover:text-amber-700"
-            }`}
+        <div
+            className={`flex items-center gap-1 pl-3 pr-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 m-0.5 cursor-pointer
+                ${active
+                    ? "bg-amber-700 border-amber-700 text-white"
+                    : "bg-white border-stone-300 text-stone-500 hover:border-amber-600 hover:text-amber-700"
+                }`}
+            onClick={onClick}
         >
-            <span className="cursor-pointer" onClick={onClick}>{label}</span>
+            {label}
         </div>
     );
 }
@@ -114,7 +217,6 @@ function DeleteModal({
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-96 overflow-hidden">
-                {/* Red danger header */}
                 <div className="bg-red-600 px-6 py-5 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                         <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -127,7 +229,6 @@ function DeleteModal({
                     </div>
                 </div>
 
-                {/* Body */}
                 <div className="px-6 py-5">
                     <p className="text-stone-600 text-sm leading-relaxed mb-3">
                         You are about to <span className="font-semibold text-red-600">permanently delete</span> this image from the database.
@@ -187,12 +288,9 @@ export default function ImagesAdmin({ token }: TokenProp) {
     const [showConfirm, setShowConfirm] = useState(false);
     const [imageToDelete, setImageToDelete] = useState<string | null>(null);
 
-    const [pageSections, setPageSections] = useState<Record<string, string[]>>(DEFAULT_PAGE_SECTIONS);
-    const [pageLabels, setPageLabels] = useState<Record<string, string>>(DEFAULT_PAGE_LABELS);
-    const [sectionLabels, setSectionLabels] = useState<Record<string, Record<string, string>>>(DEFAULT_SECTION_LABELS);
-
-    const [quickSectionKey, setQuickSectionKey] = useState("");
-    const [quickTypeKey, setQuickTypeKey] = useState("");
+    const pageSections = DEFAULT_PAGE_SECTIONS;
+    const pageLabels = DEFAULT_PAGE_LABELS;
+    const sectionLabels = DEFAULT_SECTION_LABELS;
 
     const availablePages = useMemo(() => Object.keys(pageSections), [pageSections]);
     const availableSections = pageSections[page] ?? [];
@@ -200,7 +298,7 @@ export default function ImagesAdmin({ token }: TokenProp) {
     useEffect(() => {
         if (availableSections.length === 0) { setSection(""); return; }
         if (!availableSections.includes(section)) setSection(availableSections[0]);
-    }, [page, pageSections]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /* ---------------- Fetch Images ---------------- */
     const fetchImages = async () => {
@@ -264,60 +362,6 @@ export default function ImagesAdmin({ token }: TokenProp) {
         setImageToDelete(null);
     };
 
-    /* ---------------- Add / Remove Type ---------------- */
-    const handleAddType = () => {
-        const key = quickTypeKey.trim();
-        if (!key) return;
-        if (!pageSections[key]) {
-            setPageSections((prev) => ({ ...prev, [key]: [] }));
-            setPageLabels((prev) => ({ ...prev, [key]: prettifyLabel(key) }));
-        }
-        setPage(key);
-        setSection("");
-        setQuickTypeKey("");
-    };
-
-    const handleRemoveType = (typeKey: string) => {
-        if (Object.keys(pageSections).length <= 1) return;
-        setPageSections((prev) => { const next = { ...prev }; delete next[typeKey]; return next; });
-        setPageLabels((prev) => { const next = { ...prev }; delete next[typeKey]; return next; });
-        setSectionLabels((prev) => { const next = { ...prev }; delete next[typeKey]; return next; });
-        if (page === typeKey) {
-            const remaining = Object.keys(pageSections).filter((k) => k !== typeKey);
-            setPage(remaining[0] || "");
-        }
-    };
-
-    /* ---------------- Add / Remove Section ---------------- */
-    const handleAddSection = () => {
-        const secKey = quickSectionKey.trim();
-        if (!secKey || !page) return;
-        setPageSections((prev) => {
-            const existing = prev[page] || [];
-            if (existing.includes(secKey)) return prev;
-            return { ...prev, [page]: [...existing, secKey] };
-        });
-        setSectionLabels((prev) => ({
-            ...prev,
-            [page]: { ...(prev[page] || {}), [secKey]: prettifyLabel(secKey) },
-        }));
-        setSection(secKey);
-        setQuickSectionKey("");
-    };
-
-    const handleRemoveSection = (secKey: string) => {
-        setPageSections((prev) => ({ ...prev, [page]: (prev[page] || []).filter((s) => s !== secKey) }));
-        setSectionLabels((prev) => {
-            const next = { ...(prev[page] || {}) };
-            delete next[secKey];
-            return { ...prev, [page]: next };
-        });
-        if (section === secKey) {
-            const remaining = (pageSections[page] || []).filter((s) => s !== secKey);
-            setSection(remaining[0] || "");
-        }
-    };
-
     /* ---------------- JSX ---------------- */
     return (
         <div className="p-6 bg-stone-50 min-h-screen">
@@ -335,33 +379,15 @@ export default function ImagesAdmin({ token }: TokenProp) {
                     <label className="block text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">
                         Page Type
                     </label>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
+                    <div className="flex flex-wrap gap-1.5">
                         {availablePages.map((p) => (
                             <PageTab
                                 key={p}
                                 label={pageLabels[p] || prettifyLabel(p)}
                                 active={p === page}
                                 onClick={() => { setPage(p); setSection(pageSections[p]?.[0] || ""); }}
-                                onRemove={() => handleRemoveType(p)}
                             />
                         ))}
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                        <input
-                            type="text"
-                            value={quickTypeKey}
-                            onChange={(e) => setQuickTypeKey(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === "Enter") handleAddType(); }}
-                            placeholder="New type key… (e.g. testimonials)"
-                            className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition"
-                        />
-                        <button
-                            onClick={handleAddType}
-                            disabled={!quickTypeKey.trim()}
-                            className="px-4 py-1.5 rounded-lg bg-amber-700 text-white text-sm font-medium hover:bg-amber-800 disabled:opacity-40 transition"
-                        >
-                            + Add
-                        </button>
                     </div>
                 </div>
 
@@ -375,7 +401,7 @@ export default function ImagesAdmin({ token }: TokenProp) {
                             {availableSections.length}
                         </span>
                     </label>
-                    <div className="flex flex-wrap mb-2">
+                    <div className="flex flex-wrap">
                         {availableSections.length ? (
                             availableSections.map((sec) => (
                                 <SectionChip
@@ -383,29 +409,11 @@ export default function ImagesAdmin({ token }: TokenProp) {
                                     label={sectionLabels[page]?.[sec] || prettifyLabel(sec)}
                                     active={sec === section}
                                     onClick={() => setSection(sec)}
-                                    onRemove={() => handleRemoveSection(sec)}
                                 />
                             ))
                         ) : (
-                            <span className="text-xs text-stone-400 italic m-0.5">No sections yet — add one.</span>
+                            <span className="text-xs text-stone-400 italic m-0.5">No sections available.</span>
                         )}
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                        <input
-                            type="text"
-                            value={quickSectionKey}
-                            onChange={(e) => setQuickSectionKey(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === "Enter") handleAddSection(); }}
-                            placeholder="New section key… (e.g. heroImage)"
-                            className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 bg-stone-50 text-sm focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition"
-                        />
-                        <button
-                            onClick={handleAddSection}
-                            disabled={!quickSectionKey.trim() || !page}
-                            className="px-4 py-1.5 rounded-lg bg-stone-700 text-white text-sm font-medium hover:bg-stone-800 disabled:opacity-40 transition"
-                        >
-                            + Add
-                        </button>
                     </div>
                 </div>
 

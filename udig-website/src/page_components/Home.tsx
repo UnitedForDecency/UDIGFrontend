@@ -1,151 +1,290 @@
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button.tsx";
-import { X } from 'lucide-react';
-import { useState } from "react";
-import DualCarousel from "@/components/ui/DualCarousel.tsx";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+
+interface ImageType {
+    id: string;
+    imageData: string;
+    url: string;
+    type: string;
+    section: string;
+    order?: number;
+    mimetype?: string;
+}
+
+const formatImages = (data: any[]): ImageType[] =>
+    data
+        .map((img) => ({
+            ...img,
+            url: `data:${img.mimetype || "image/png"};base64,${img.imageData}`,
+        }))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+function useSectionImages(section: string) {
+    const [images, setImages] = useState<ImageType[]>([]);
+
+    useEffect(() => {
+        const fetchImages = async () => {
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/section/${section}`
+                );
+                const data = await res.json();
+                setImages(formatImages(data));
+            } catch (err) {
+                console.error(`Failed to fetch images for section "${section}":`, err);
+            }
+        };
+        fetchImages();
+    }, [section]);
+
+    return images;
+}
 
 export default function Home() {
-    const [showPopup, setShowPopup] = useState(true);
 
-    const handleDismiss = () => {
-        setShowPopup(false);
-    };
+    const mainImages           = useSectionImages("MainImage");
+    const callForDecencyImages = useSectionImages("CallForDecency");
+    const roadTripImages       = useSectionImages("RoadTrip");
+    const billboardImages      = useSectionImages("Billboard");
+    const contestImages        = useSectionImages("Contests");
+    const engagementImages     = useSectionImages("Engagement");
+    const petitionImages       = useSectionImages("Petition");
+    const pledgeImages         = useSectionImages("Pledge Challenges");
+    const certImages           = useSectionImages("Decency Certification");
 
     return (
         <div>
-            {/* UDIG intro section */}
-            <section className="relative w-full h-[600px] flex items-center justify-center border-b border-stone-taupe overflow-hidden">            
-                {/* Carousel as background */}
-                
-                <DualCarousel page="home" />
-                <div className="absolute inset-0 bg-yale-blue opacity-40" />
-                <div className="absolute inset-0 bg-black/20" />
-
-                {/* Header content */}
-                <div className="absolute relative z-20 text-center py-12 bg-white/75 backdrop-blur-xl rounded-2xl shadow-2xl px-6">
-                    <h1 className="text-yale-blue text-4xl font-bold mb-4">
-                        Stand United for Decency.
-                    </h1>
-                    <p className="text-black max-w-2xl mx-auto mb-6">
-                        As American citizens, it is our right and duty to demand the highest standards of decency and ethics in our
-                        government officials. United for Decency in Government is a nonpartisan movement striving to secure a safe, healthy, and peaceful future
-                        by fostering decency and accountability in our nation.
-                    </p>
-                    <div>
-                        <Button 
-                            className="rounded-full mx-3 p-6 bg-yale-blue cursor-pointer transition hover:bg-deep-harbor"
-                            onClick={() => { window.location.href = "/get-involved"; }}
-                        >
-                            Join the Movement
-                        </Button>
-                        <Button
-                            className="rounded-full mx-3 p-6 bg-brick-ember text-white cursor-pointer transition hover:bg-oxblood-shadow"
-                            onClick={() => { window.location.href = "/about"; }}
-                        >
-                            Our Story
-                        </Button>
+            {/* Hero Section */}
+            <section className="relative w-full flex flex-col items-center justify-center border-b border-stone-200 overflow-hidden bg-[#dfe3e9] py-12 px-6">
+                {mainImages[0] && (
+                    <div className="w-full max-w-4xl mb-6">
+                        <img
+                            src={mainImages[0].url}
+                            alt="UDIG Bus"
+                            className="w-full object-cover rounded-xl shadow-lg"
+                        />
                     </div>
+                )}
+
+                <h1 className="text-yale-blue text-4xl font-bold text-center mb-4">
+                    Demand Decency From Our Leaders
+                </h1>
+
+                <p className="text-black text-lg text-center max-w-2xl mb-8">
+                    We are building a nationwide, nonpartisan movement to hold elected officials
+                    to standards of respect, integrity, and accountability.
+                </p>
+
+                <div className="flex flex-wrap justify-center gap-4">
+                    <Button
+                        className="rounded-full px-8 py-5 bg-brick-ember text-white cursor-pointer transition hover:bg-oxblood-shadow text-base"
+                        onClick={() => { window.location.href = "/petition-pledge/petition"; }}
+                    >
+                        Sign the Petition
+                    </Button>
+                    <Button
+                        className="rounded-full px-8 py-5 bg-yale-blue text-white cursor-pointer transition hover:bg-deep-harbor text-base"
+                        onClick={() => { window.location.href = "/petition-pledge/pledge"; }}
+                    >
+                        View the Pledge
+                    </Button>
+                    <Button
+                        className="rounded-full px-8 py-5 bg-brick-ember text-white cursor-pointer transition hover:bg-oxblood-shadow text-base"
+                        onClick={() => { window.location.href = "/contribute"; }}
+                    >
+                        Contribute
+                    </Button>
                 </div>
             </section>
 
-            {/* Overviews & Statistics */}
-            <section className="bg-misty-linen py-20">
-                {/* Impact blurbs */}
-                <div className="w-full flex flex-col items-center mb-20">
-                    <h2 className="text-yale-blue text-3xl font-bold mb-12">People Powering Decency</h2>
-                    <div className="flex flex-wrap justify-center gap-6">
-                        <Card className="w-65 sm:w-[60vw] md:w-[20vw] bg-alice-blue rounded-2xl shadow-xl p-6 transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
-                            <CardHeader>
-                                <CardTitle className="font-bold text-yale-blue text-xl mb-2">Stories That Matter</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-gray-700">
-                                    From classrooms to city halls, discover how everyday people are choosing decency—and
-                                    changing their communities for the better.
-                                </CardDescription>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="w-65 sm:w-[60vw] md:w-[20vw] bg-alice-blue rounded-2xl shadow-xl p-6 transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
-                            <CardHeader>
-                                <CardTitle className="font-bold text-yale-blue text-xl mb-2">Decency Champions</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-gray-700">
-                                    Meet the individuals and groups leading with courage, respect, and
-                                    integrity in public life.
-                                </CardDescription>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="w-65 sm:w-[60vw] md:w-[20vw] bg-alice-blue rounded-2xl shadow-xl p-6 transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
-                            <CardHeader>
-                                <CardTitle className="font-bold text-yale-blue text-xl mb-2">UDIG in Action</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="text-gray-700">
-                                    See how our programs, campaigns, and events turn shared values into
-                                    meaningful action.
-                                </CardDescription>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-
-                {/* Statistics */}
-                <div className="w-full flex flex-col items-center mb-20">
-                    <h2 className="text-yale-blue text-3xl font-bold mb-12">Our Wins, Shared</h2>
-                    <div className="flex flex-wrap justify-center gap-6">
-                        <Card className="w-65 sm:w-[60vw] md:w-[20vw] bg-porcelain rounded-2xl shadow-xl py-10 px-6 border-t-4 border-t-brick-ember transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
-                            <CardHeader>
-                                <CardTitle className="font-bold text-3xl text-yale-blue mb-2">120+</CardTitle>
-                                <CardDescription className="text-gray-700">Community Events Hosted</CardDescription>
-                            </CardHeader>
-                        </Card>
-
-                        <Card className="w-65 sm:w-[60vw] md:w-[20vw] bg-porcelain rounded-2xl shadow-xl py-10 px-6 border-t-4 border-t-brick-ember transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
-                            <CardHeader>
-                                <CardTitle className="font-bold text-3xl text-yale-blue mb-2">45</CardTitle>
-                                <CardDescription className="text-gray-700">Essay Contest Winners</CardDescription>
-                            </CardHeader>
-                        </Card>
-
-                        <Card className="w-65 sm:w-[60vw] md:w-[20vw] bg-porcelain rounded-2xl shadow-xl py-10 px-6 border-t-4 border-t-brick-ember transition-transform duration-300 hover:scale-105 hover:shadow-2xl">
-                            <CardHeader>
-                                <CardTitle className="font-bold text-3xl text-yale-blue mb-2">30k</CardTitle>
-                                <CardDescription className="text-gray-700">Engaged Supporters Nationwide</CardDescription>
-                            </CardHeader>
-                        </Card>
-                    </div>
-                </div>
-
-                {/* Call to action pop-up */}
-                {showPopup && (
-                    <Card className="fixed lg:w-1/4 sm:w-2/4 border-2 border-golden-bronze bg-brick-ember bottom-4 left-4 p-4 text-center rounded-2xl shadow-2xl animate-fadeIn">
-                        <CardHeader>
-                            <div className="flex -mr-5 justify-end">
-                                <X onClick={handleDismiss} className="cursor-pointer hover:text-gray-300 transition-colors"/>
-                            </div>
-                            <h3 className="text-white text-xl">Your voice matters here.</h3>
-                        </CardHeader>
-                        <CardDescription>
-                            <p className="text-white">
-                                Whether you volunteer, advocate, or support our work, your involvement helps build a more
-                                respectful and accountable future
-                            </p>
-                            <Button className="m-2 bg-yale-blue cursor-pointer transition hover:bg-deep-harbor" onClick={() => (window.location.href = "/get-involved/")}>
-                                Take Action
-                            </Button>
-                        </CardDescription>
-                    </Card>
+            {/* A Call For Decency */}
+            <section className="bg-[#dfe3e9] py-16 px-6 flex flex-col items-center">
+                <h2 className="text-yale-blue text-3xl font-bold text-center mb-8">
+                    A Call For Decency
+                </h2>
+                {callForDecencyImages[0] && (
+                    <img
+                        src={callForDecencyImages[0].url}
+                        alt="A Call For Decency"
+                        className="w-full max-w-3xl rounded-xl shadow-lg"
+                    />
                 )}
             </section>
+
+            {/* Taking This Across America */}
+            <section className="bg-white py-16 px-6">
+                <div className="max-w-4xl mx-auto">
+                    <h2 className="text-yale-blue text-3xl font-bold text-center mb-4">
+                        Taking This Across America
+                    </h2>
+                    <p className="text-black text-lg mb-10">
+                        We are bringing this campaign directly into communities across the United States through
+                        powerful, effective public engagement, nationwide outreach, and highly visible civic
+                        accountability efforts.
+                    </p>
+
+                    <div className="flex flex-col gap-8 divide-y divide-gray-200">
+                        {/* Bus Road Trip */}
+                        <div className="flex flex-col sm:flex-row items-center gap-6 pt-8">
+                            {roadTripImages[0] && (
+                                <img
+                                    src={roadTripImages[0].url}
+                                    alt="Nation-Wide Bus Road Trip"
+                                    className="w-48 h-auto object-contain flex-shrink-0"
+                                />
+                            )}
+                            <p className="text-black text-lg">
+                                Nation-Wide Bus Road Trip, With Youth-Involved Events in 100 Communities,
+                                Including Local Collaborating Organizations.
+                            </p>
+                        </div>
+
+                        {/* Billboard Campaign */}
+                        <div className="flex flex-col sm:flex-row items-center gap-6 pt-8">
+                            {billboardImages[0] && (
+                                <img
+                                    src={billboardImages[0].url}
+                                    alt="Nationwide Billboard Campaign"
+                                    className="w-48 h-auto object-contain flex-shrink-0"
+                                />
+                            )}
+                            <p className="text-black text-lg">
+                                Nationwide Billboard Campaign
+                            </p>
+                        </div>
+
+                        {/* Essay Contests */}
+                        <div className="flex flex-col sm:flex-row items-center gap-6 pt-8">
+                            {contestImages[0] && (
+                                <img
+                                    src={contestImages[0].url}
+                                    alt="National Decency Essay Contests"
+                                    className="w-48 h-auto object-contain flex-shrink-0"
+                                />
+                            )}
+                            <p className="text-black text-lg">
+                                National Decency Essay Contests
+                            </p>
+                        </div>
+
+                        {/* Engagement */}
+                        <div className="flex flex-col sm:flex-row items-center gap-6 pt-8">
+                            {engagementImages[0] && (
+                                <img
+                                    src={engagementImages[0].url}
+                                    alt="Engagement of People of All Ages"
+                                    className="w-48 h-auto object-contain flex-shrink-0"
+                                />
+                            )}
+                            <p className="text-black text-lg">
+                                Engagement of People of All Ages and All Political Stripes
+                            </p>
+                        </div>
+
+                        {/* Decency Petition */}
+                        <div className="flex flex-col sm:flex-row items-center gap-6 pt-8">
+                            {petitionImages[0] && (
+                                <img
+                                    src={petitionImages[0].url}
+                                    alt="Decency Petition"
+                                    className="w-48 h-auto object-contain flex-shrink-0"
+                                />
+                            )}
+                            <p className="text-black text-lg">
+                                <a href="/petition-pledge/petition" className="text-blue-700 hover:underline">
+                                    Decency Petition
+                                </a>{" "}
+                                — People join together to demand higher standards in public office.
+                            </p>
+                        </div>
+
+                        {/* Pledge Challenges */}
+                        <div className="flex flex-col sm:flex-row items-center gap-6 pt-8">
+                            {pledgeImages[0] && (
+                                <img
+                                    src={pledgeImages[0].url}
+                                    alt="Pledge Challenges"
+                                    className="w-48 h-auto object-contain flex-shrink-0"
+                                />
+                            )}
+                            <p className="text-black text-lg">
+                                <a href="/petition-pledge/pledge" className="text-blue-700 hover:underline">
+                                    Pledge Challenges
+                                </a>{" "}
+                                — Candidates and elected officials are challenged to commit in writing
+                                to the decency pledge.
+                            </p>
+                        </div>
+
+                        {/* Decency Certifications */}
+                        <div className="flex flex-col sm:flex-row items-center gap-6 pt-8">
+                            {certImages[0] && (
+                                <img
+                                    src={certImages[0].url}
+                                    alt="Decency Certifications"
+                                    className="w-48 h-auto object-contain flex-shrink-0"
+                                />
+                            )}
+                            <p className="text-black text-lg">
+                                <a href="/petition-pledge/certification" className="text-blue-700 hover:underline">
+                                    Decency Certifications
+                                </a>{" "}
+                                — We track and publicize who signs and who refuses the decency pledge
+                                and post decency ratings of candidates and elected officials.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Certified For Decency */}
+            <section className="bg-[#dfe3e9] py-16 px-6">
+                <div className="max-w-4xl mx-auto">
+                    <h2 className="text-yale-blue text-3xl font-bold text-center mb-6">
+                        Certified For Decency
+                    </h2>
+                    <p className="text-black text-lg mb-8">
+                        Candidates and elected officials will be publicly categorized based on their participation
+                        in the pledge process and their demonstrated commitment to standards of integrity,
+                        accountability, and respectful public conduct.
+                    </p>
+
+                    <div className="flex flex-col gap-4 text-lg text-black">
+                        <p>🟢 <strong>Certified for Decency:</strong> Signed pledge + no verified violations</p>
+                        <p>🟡 <strong>Provisionally Certified:</strong> Signed pledge + concerns under review</p>
+                        <p>🔴 <strong>Not Certified:</strong> Refused to sign or serious concerns identified</p>
+                        <p>⚫ <strong>Decertified:</strong> Signed pledge but later violated standards</p>
+                    </div>
+
+                    <p className="text-black text-lg mt-8">
+                        Voters deserve transparency regarding the conduct and commitments of those who seek public office.
+                    </p>
+                </div>
+            </section>
+
+            {/* Join the Movement */}
+            <section className="bg-[#102e50] py-20 px-6 flex flex-col items-center text-center">
+                <h2 className="text-white text-4xl font-bold mb-6">Join The Movement</h2>
+                <p className="text-white text-lg max-w-2xl mb-8">
+                    Help us bring this message across America through a national road trip, presentations
+                    in 100 cities, a billboard campaign, petitions, decency pledge challenges, and
+                    accountability for commitments to decency.
+                </p>
+                <div className="flex flex-wrap justify-center gap-4">
+                    <Button
+                        className="rounded-full px-8 py-5 bg-white text-[#102e50] font-semibold cursor-pointer transition hover:bg-gray-100 text-base"
+                        onClick={() => { window.location.href = "/petition-pledge/petition"; }}
+                    >
+                        Sign The Petition
+                    </Button>
+                    <Button
+                        className="rounded-full px-8 py-5 bg-brick-ember text-white font-semibold cursor-pointer transition hover:bg-oxblood-shadow text-base"
+                        onClick={() => { window.location.href = "/contribute"; }}
+                    >
+                        Donate to the Movement
+                    </Button>
+                </div>
+            </section>
         </div>
-    )
+    );
 }

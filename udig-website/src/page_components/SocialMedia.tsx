@@ -8,7 +8,7 @@ import { State, City } from "country-state-city";
 import type { ICity } from "country-state-city";
 
 type Comment = {
-  _id?: string;
+  id?: string;
   userId: string;
   username: string;
   message: string;
@@ -16,20 +16,20 @@ type Comment = {
 };
 
 type Reply = {
-  _id?: string;
+  id?: string;
   username: string;
   message: string;
 };
 
 type Post = {
-  _id: string;
+  id: string;
   userId: string;
   username: string;
   title: string;
   state?: string;
   city?: string;
   hyperlink?: string;
-  created_at: string;
+  createdAt: string;
   description: string;
   likes: string[];
   comments: Comment[];
@@ -129,7 +129,7 @@ const CommentNode = ({
         <div className="ml-4">
           {visibleReplies.map((child: any) => (
             <CommentNode
-              key={child._id}
+              key={child.id}
               comment={child}
               postId={postId}
               path={currentPath}
@@ -175,7 +175,6 @@ export default function SocialMedia({ token }: TokenProp) {
   const [username, setUsername] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-
   const [reportingPostId, setReportingPostId] = useState<string | null>(null);
   const [reportMessage, setReportMessage] = useState("");
 
@@ -199,7 +198,7 @@ export default function SocialMedia({ token }: TokenProp) {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     fetchUserData();
@@ -246,8 +245,8 @@ export default function SocialMedia({ token }: TokenProp) {
     if (!token) return;
 
     try {
-      const res = await axios.get(`${apiBase}/accounts/token/${token}`);
-      setUserId(res.data.userId);
+      const res = await axios.get(`${apiBase}/accounts/me`, {headers: { Authorization: `Bearer ${token}` }});
+      setUserId(res.data.id);
       setUsername(res.data.username || "");
     } catch (err) {
       notifyApiError(err as AxiosError, "fetch user");
@@ -257,7 +256,8 @@ export default function SocialMedia({ token }: TokenProp) {
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get(`${apiBase}/social`);
+      if (!token) return;
+      const res = await axios.get(`${apiBase}/social`, { headers: { Authorization: `Bearer ${token}`}});
 
       const postsData = (res.data.posts ?? [])
         .map((p: any): Post => ({
@@ -266,7 +266,7 @@ export default function SocialMedia({ token }: TokenProp) {
           comments: Array.isArray(p.comments) ? p.comments : [],
         }))
         .sort((a: Post, b: Post) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
       setPosts(postsData);
@@ -283,7 +283,7 @@ export default function SocialMedia({ token }: TokenProp) {
   const handlePost = async () => 
     { 
       if (!titleInput.trim() || !descriptionInput.trim()) return; 
-      try { await axios.post(`${apiBase}/social`, 
+      try { await axios.post(`${apiBase}/social`,
         { userId, 
           username: username, 
           title: titleInput, 
@@ -291,7 +291,7 @@ export default function SocialMedia({ token }: TokenProp) {
           city: selectedCity || undefined, 
           hyperlink: linkInput || undefined, 
           description: descriptionInput, 
-          });
+          }, {headers: { Authorization: `Bearer ${token}` }});
 
           setTitleInput(""); 
           setLinkInput(""); 
@@ -319,13 +319,13 @@ export default function SocialMedia({ token }: TokenProp) {
     if (!editingPost) return;
 
     try {
-      await axios.put(`${apiBase}/social/${editingPost._id}`, {
+      await axios.put(`${apiBase}/social/${editingPost.id}`, {
         title: editTitle === "" ? undefined : editTitle,
         state: editState ?? "",
         city: editCity ?? "",
         hyperlink: editLink ?? "",
         description: editDescription === "" ? undefined : editDescription,
-      });
+      }, {headers: { Authorization: `Bearer ${token}` }});
 
       setEditingPost(null);
       fetchPosts();
@@ -340,11 +340,12 @@ export default function SocialMedia({ token }: TokenProp) {
     if (!editingPost) return;
 
     try {
-      await axios.delete(`${apiBase}/social/${editingPost._id}`);
-
-      setPosts((prev) => prev.filter(p => p._id !== editingPost._id));
+      await axios.delete(`${apiBase}/social/${editingPost.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setEditingPost(null);
+      await fetchPosts();
     } catch (err) {
       notifyApiError(err as AxiosError, "delete post");
     }
@@ -355,25 +356,20 @@ export default function SocialMedia({ token }: TokenProp) {
   const handleReportPost = async () => {
     if (!userId || !reportingPostId) return;
 
-    const post = posts.find((p) => p._id === reportingPostId);
+    const post = posts.find((p) => p.id === reportingPostId);
     if (!post) return;
 
     try {
-      await axios.post(`${apiBase}/reports/`, {
-        commentId: post._id,
+      await axios.post(`${apiBase}/reports`, {
+        category: "SocialMedia Post",
+        categoryId: post.id,
         reporterId: userId,
-        reporterName: username || "unknown",
-        subjectId: userId,
-        subjectName: username,
-        content: post.description,
-        postedOn: post._id,
-        postedOnName: post.title,
         reason: reportMessage,
-        category: "post",
-      });
+      }, {headers: { Authorization: `Bearer ${token}` }});
 
       setReportingPostId(null);
       setReportMessage("");
+      alert("Post Reported.");
     } catch (err) {
       notifyApiError(err as AxiosError, "report post");
     }
@@ -389,12 +385,13 @@ export default function SocialMedia({ token }: TokenProp) {
       await axios.post(`${apiBase}/social/comment`, {
         userId,
         message,
-        postId
-      });
+        postId,
+        username,
+      }, {headers: { Authorization: `Bearer ${token}` }});
 
       setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
       fetchPosts();
-    } catch (err) {
+    } catch (err:any) {
       notifyApiError(err as AxiosError, "comment on post");
     }
   };
@@ -413,7 +410,7 @@ const handleReply = async (
       await axios.post(`${apiBase}/social/reply/${commentId}/${postId}`, {
         userId,
         message,
-      });
+      }, {headers: { Authorization: `Bearer ${token}` }});
 
       setReplyInputs((prev) => ({
         ...prev,
@@ -431,12 +428,12 @@ const handleReply = async (
 
   const handleDeleteComment = async (postId: string, commentId: string) => {
     try {
-      await axios.delete(`${apiBase}/social/reply/${postId}/${commentId}`);
+      await axios.delete(`${apiBase}/social/reply/${postId}/${commentId}`, {headers: { Authorization: `Bearer ${token}` }});
 
       setPosts((prev) =>
         prev.map((post) => ({
           ...post,
-          comments: post.comments.filter((c) => c._id !== commentId),
+          comments: post.comments.filter((c) => c.id !== commentId),
         }))
       );
       await fetchPosts();
@@ -454,11 +451,11 @@ const handleReply = async (
       await axios.post(`${apiBase}/social/like`, {
         postId,
         userId,
-      });
+      }, {headers: { Authorization: `Bearer ${token}` }});
 
       setPosts((prev) =>
         prev.map((post) =>
-          post._id === postId
+          post.id === postId
             ? {
                 ...post,
                 likes: liked
@@ -478,13 +475,13 @@ const handleReply = async (
   const handleApplyFilter = async () => {
     try {
       let res;
-
       if (filterState && filterCity) {
         res = await axios.get(`${apiBase}/social/state/city`, {
           params: {
             state: filterState,
             city: filterCity,
           },
+          headers: { Authorization: `Bearer ${token}` }
         });
       } else if (filterState) {
         res = await axios.get(`${apiBase}/social/state/${filterState}`, {});
@@ -493,16 +490,17 @@ const handleReply = async (
         setShowFilterModal(false);
         return;
       }
+      const postsArray = res.data.posts;
 
-      const postsData: Post[] = res.data.posts
+      const postsData: Post[] = postsArray
         .map((p: any) => ({
           ...p,
           likes: Array.isArray(p.likes) ? p.likes : [],
           comments: Array.isArray(p.comments) ? p.comments : [],
         }))
-        .sort((a: any, b: any) => {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        });
+        .sort((a: any, b: any) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
 
       setPosts(postsData);
       setShowFilterModal(false);
@@ -676,7 +674,7 @@ const handleReply = async (
                     const isOwner = post.userId === userId;
 
                     return (
-                      <div key={post._id} className="mb-4 p-4 bg-gray-300 border rounded relative pb-10">
+                      <div key={post.id} className="mb-4 p-4 bg-gray-300 border rounded relative pb-10">
                         {/* EDIT BUTTON */}
                         {isOwner && (
                           <button
@@ -703,28 +701,28 @@ const handleReply = async (
 
                         {/* ACTIONS */}
                         <div className="flex items-center gap-2 mt-2">
-                          <button onClick={() => toggleLike(post._id, liked)}>
+                          <button onClick={() => toggleLike(post.id, liked)}>
                             {liked ? "Unlike" : "Like"} {post.likes.length}
                           </button>
 
                           <input
-                            value={commentInputs[post._id] || ""}
+                            value={commentInputs[post.id] || ""}
                             onChange={(e) =>
                               setCommentInputs((prev) => ({
                                 ...prev,
-                                [post._id]: e.target.value,
+                                [post.id]: e.target.value,
                               }))
                             }
                             placeholder="Comment..."
                             className="border p-1 text-sm"
                           />
 
-                          <Button size="sm" onClick={() => handleComment(post._id)}>
+                          <Button size="sm" onClick={() => handleComment(post.id)}>
                             Send
                           </Button>
 
                           <button
-                            onClick={() => setReportingPostId(post._id)}
+                            onClick={() => setReportingPostId(post.id)}
                             className="ml-auto text-xs text-red-500 underline"
                           >
                             Report
@@ -735,9 +733,9 @@ const handleReply = async (
                         <div className="mt-2 border-t pt-2">
                           {post.comments.map((c) => (
                             <CommentNode
-                              key={c._id}
+                              key={c.id}
                               comment={c}
-                              postId={post._id}
+                              postId={post.id}
                               username={username}
                               activeReply={activeReplyPath}
                               setActiveReply={setActiveReplyPath}

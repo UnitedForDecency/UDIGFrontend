@@ -6,257 +6,267 @@ import { useEffect, useState } from "react";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { Field, FieldError, FieldLabel, FieldSet } from "@/components/ui/field";
+import { Field, FieldLabel, FieldSet } from "@/components/ui/field";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 
 interface PressCoverage {
-    _id: string;
+    id: string;
     title: string;
     description: string;
     contents: string;
     pressname: string;
     readTime?: string;
     dateUploaded?: string;
+    link?: string;
 }
 
-
 const formSchema = z.object({
-    title: z.string().min(1, "Title is required").max(80, "Title must be at most 80 characters."),
-    description: z.string().min(1, "Description is required").max(200, "Description must be at most 200 characters"),
-    pressname: z.string().min(1, "Press name is required"),
+    title: z.string().min(1).max(80),
+    description: z.string().min(1).max(200),
+    pressname: z.string().min(1),
     readTimeValue: z.string().optional(),
     readTimeUnit: z.string().optional(),
     contents: z.string(),
+    link: z.string().optional()
 });
 
 export default function PressCoverageAdmin({ token }: TokenProp) {
-    const navigate = useNavigate();
     const API_BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL;
+
     const [content, setContent] = useState<string>("");
-    const [contentsMissing, setContentsMissing] = useState(false);
     const [pressCoverages, setPressCoverages] = useState<PressCoverage[]>([]);
-    const [loading, setLoading] = useState(false);
+
+    // 🔥 NEW
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingCoverage, setEditingCoverage] = useState<PressCoverage | null>(null);
 
     useEffect(() => {
-        axios.get(`${API_BASE}/presscoverage`)
+        axios.get(`${API_BASE}/press`)
             .then((res) => setPressCoverages(Array.isArray(res.data) ? res.data : []))
-            .catch((err) => console.error("Failed to fetch press coverage:", err));
+            .catch(console.error);
     }, []);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        mode: "onChange",
         defaultValues: {
-        title: "",
-        description: "",
-        pressname: "",
-        readTimeValue: "",
-        readTimeUnit: "minutes",
-        contents: ""
-    }
+            title: "",
+            description: "",
+            pressname: "",
+            readTimeValue: "",
+            readTimeUnit: "minutes",
+            contents: "",
+            link: ""
+        }
     });
 
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
         if (!content || content === "<p></p>") {
-            setContentsMissing(true);
             return;
         }
-        setContentsMissing(false);
+
 
         try {
-            setLoading(true);
-            const res = await axios.post(
-                `${API_BASE}/presscoverage`,
-                {
-                    title: data.title,
-                    description: data.description,
-                    contents: content,
-                    pressname: data.pressname,
-                    readTime: `${data.readTimeValue} ${data.readTimeUnit}`,
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const payload = {
+                title: data.title,
+                description: data.description,
+                contents: content,
+                pressname: data.pressname,
+                readTime: `${data.readTimeValue} ${data.readTimeUnit}`,
+                link: data.link?.trim() || undefined
+            };
 
-            if (res.status === 201) {
+            if (editingCoverage) {
+                await axios.put(
+                    `${API_BASE}/press/${editingCoverage.id}`,
+                    payload,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
+                setPressCoverages((prev) =>
+                    prev.map((p) =>
+                        p.id === editingCoverage.id
+                            ? { ...p, ...payload }
+                            : p
+                    )
+                );
+
+                setIsEditOpen(false);
+                setEditingCoverage(null);
+            } else {
+                // 🔥 CREATE
+                const res = await axios.post(
+                    `${API_BASE}/press`,
+                    payload,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+
                 setPressCoverages((prev) => [{
-                    _id: res.data.pressCoverageId,
-                    title: data.title,
-                    description: data.description,
-                    contents: content,
-                    pressname: data.pressname,
-                    readTime: `${data.readTimeValue} ${data.readTimeUnit}`,
+                    id: res.data.pressCoverageId,
+                    ...payload
                 }, ...prev]);
-                form.reset();
-                setContent("");
             }
 
-            if (res.status === 401) alert("Login Expired. Please log in again.");
+            form.reset();
+            setContent("");
+
         } catch (err: any) {
-            console.error("Add press coverage failed:", err.response?.data || err.message);
-            alert(err.response?.data || "Failed to add press coverage");
+            console.error(err);
+            alert("Failed");
         } finally {
-            setLoading(false);
         }
     };
 
-    const handleDelete = async (id: string, title: string) => {
-        if (!window.confirm(`Delete "${title}" permanently?`)) return;
-        try {
-            await axios.delete(`${API_BASE}/presscoverage/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setPressCoverages((prev) => prev.filter((g) => g._id !== id));
-        } catch (err: any) {
-            console.error("Delete failed:", err);
-            alert("Failed to delete press coverage");
-        }
+    const handleDelete = async (id: string) => {
+        if (!confirm("Delete permanently?")) return;
+
+        await axios.delete(`${API_BASE}/press/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        setPressCoverages((prev) => prev.filter((p) => p.id !== id));
+    };
+
+    const openEdit = (coverage: PressCoverage) => {
+        setEditingCoverage(coverage);
+        setIsEditOpen(true);
+
+        form.reset({
+            title: coverage.title,
+            description: coverage.description,
+            pressname: coverage.pressname,
+            readTimeValue: coverage.readTime?.split(" ")[0] || "",
+            readTimeUnit: coverage.readTime?.split(" ")[1] || "minutes",
+            contents: coverage.contents,
+            link: coverage.link || ""
+        });
+
+        setContent(coverage.contents);
     };
 
     return (
         <section>
-            <div>
-                <h1 className="text-3xl font-bold underline text-yale-blue decoration-brick-ember my-5">
-                    Add New Press Coverage
-                </h1>
-                <form className="flex flex-col items-center" onSubmit={form.handleSubmit(onSubmit)}>
-                    <FieldSet>
-                        <Controller name="title" control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel className="text-2xl">Title</FieldLabel>
-                                    <Input {...field} className="bg-white my-5 h-12" placeholder="Title" required />
-                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller name="description" control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel className="text-2xl">Description</FieldLabel>
-                                    <Input {...field} className="bg-white my-5 h-12" placeholder="Brief summary shown on the press coverage list" />
-                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="pressname"
-                            control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel className="text-2xl">Press Name</FieldLabel>
+            <h1 className="text-3xl font-bold my-5">Press Coverage</h1>
 
-                                    <Input
-                                        {...field}
-                                        className="bg-white my-5 h-12"
-                                        placeholder="Type a press name (e.g. The New York Times, The Washington Post)"
-                                    />
+            <form onSubmit={form.handleSubmit(onSubmit)} className="mb-10">
+                <FieldSet>
 
-                                    <datalist id="pressname-suggestions">
-                                        {pressCoverages
-                                            .map((g) => g.pressname)
-                                            .filter((v, i, arr) => arr.indexOf(v) === i)
-                                            .map((cat) => (
-                                                <option key={cat} value={cat} />
-                                            ))}
-                                    </datalist>
+                    <Controller name="title" control={form.control}
+                        render={({ field }) => (
+                            <Field>
+                                <FieldLabel>Title</FieldLabel>
+                                <Input {...field} />
+                            </Field>
+                        )}
+                    />
 
-                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Controller
-                            name="readTimeValue"
-                            control={form.control}
-                            render={({ field }) => (
-                                <Field>
-                                    <FieldLabel className="text-2xl">Read Time (Optional)</FieldLabel>
+                    <Controller name="description" control={form.control}
+                        render={({ field }) => (
+                            <Field>
+                                <FieldLabel>Description</FieldLabel>
+                                <Input {...field} />
+                            </Field>
+                        )}
+                    />
 
-                                    <div className="flex gap-2 my-5">
-                                        {/* Number input */}
-                                        <Input
-                                            {...field}
-                                            type="number"
-                                            min="1"
-                                            className="bg-white h-12 w-24"
-                                            placeholder="5"
-                                        />
+                    <Controller name="link" control={form.control}
+                        render={({ field }) => (
+                            <Field>
+                                <FieldLabel>Link</FieldLabel>
+                                <Input {...field} />
+                            </Field>
+                        )}
+                    />
 
-                                        {/* Dropdown */}
-                                        <Controller
-                                            name="readTimeUnit"
-                                            control={form.control}
-                                            render={({ field }) => (
-                                                <select
-                                                    {...field}
-                                                    className="h-12 px-3 border rounded-md bg-white"
-                                                >
-                                                    <option value="seconds">Seconds</option>
-                                                    <option value="minutes">Minutes</option>
-                                                    <option value="hours">Hours</option>
-                                                </select>
-                                            )}
-                                        />
-                                    </div>
-                                </Field>
-                            )}
-                        />
-                        <Controller name="contents" control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel className="text-2xl">Content</FieldLabel>
-                                    {contentsMissing && <FieldError>Contents must not be empty.</FieldError>}
-                                    <RichTextEditor {...field}
-                                        aria-invalid={fieldState.invalid}
-                                        onChange={(html) => setContent(html)}
-                                        placeholder="Start writing…"
-                                    />
-                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
-                        <Button type="submit" disabled={loading} className="max-w-20">
-                            {loading ? "Posting..." : "Post"}
-                        </Button>
-                    </FieldSet>
-                </form>
+                    <Controller name="pressname" control={form.control}
+                        render={({ field }) => (
+                            <Field>
+                                <FieldLabel>Press</FieldLabel>
+                                <Input {...field} />
+                            </Field>
+                        )}
+                    />
 
-                {/* Existing Press Coverages */}
-                <div className="mt-12">
-                    <h2 className="text-2xl font-bold text-yale-blue mb-6">Existing Press Coverages ({pressCoverages.length})</h2>
-                    {pressCoverages.length === 0 ? (
-                        <p className="text-gray-500">No press coverages yet.</p>
-                    ) : (
-                        <div className="space-y-4">
-                            {pressCoverages.map((coverage) => (
-                                <div key={coverage._id}
-                                    className="border border-gray-200 rounded-lg p-5 bg-white flex items-start justify-between gap-4 hover:shadow-md transition-shadow">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-xs font-mono uppercase bg-antique-brass/40 text-stone-taupe px-2 py-0.5 rounded">
-                                                {coverage.pressname}
-                                            </span>
-                                            {coverage.readTime && <span className="text-xs text-gray-500">{coverage.readTime}</span>}
-                                        </div>
-                                        <h3 className="font-semibold text-lg text-gray-900">{coverage.title}</h3>
-                                        <p className="text-sm text-gray-600 line-clamp-2">{coverage.description}</p>
-                                    </div>
-                                    <div className="flex gap-2 flex-shrink-0">
-                                        <button onClick={() => navigate(`/about/press-coverages/${coverage._id}/edit`)}
-                                            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium">
-                                            Edit
-                                        </button>
-                                        <button onClick={() => handleDelete(coverage._id, coverage.title)}
-                                            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-medium">
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <Controller name="contents" control={form.control}
+                        render={() => (
+                            <Field>
+                                <FieldLabel>Content</FieldLabel>
+                                <RichTextEditor onChange={setContent} />
+                            </Field>
+                        )}
+                    />
+
+                    <Button type="submit">
+                        {editingCoverage ? "Update" : "Post"}
+                    </Button>
+                </FieldSet>
+            </form>
+
+            {/* LIST */}
+            {pressCoverages.map((c) => (
+                <div key={c.id} className="border p-4 mb-3 flex justify-between">
+                    <div>
+                        <h3>{c.title}</h3>
+                        <p>{c.description}</p>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button onClick={() => openEdit(c)} className="bg-blue-500 text-white px-3 py-1 rounded">
+                            Edit
+                        </button>
+                        <button onClick={() => handleDelete(c.id)} className="bg-red-500 text-white px-3 py-1 rounded">
+                            Delete
+                        </button>
+                    </div>
                 </div>
-            </div>
+            ))}
+
+            {/* 🔥 MODAL */}
+            {isEditOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg w-[600px] relative">
+
+                        <button
+                            onClick={() => {
+                                setIsEditOpen(false);
+                                setEditingCoverage(null);
+                            }}
+                            className="absolute top-2 right-2 text-gray-500"
+                        >
+                            ✕
+                        </button>
+
+                        <h2 className="text-xl mb-4">Edit Press Coverage</h2>
+
+                        {/* SAME FORM */}
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                            <FieldSet>
+
+                                <Controller name="title" control={form.control}
+                                    render={({ field }) => <Input {...field} />}
+                                />
+
+                                <Controller name="description" control={form.control}
+                                    render={({ field }) => <Input {...field} />}
+                                />
+
+                                <Controller name="link" control={form.control}
+                                    render={({ field }) => <Input {...field} />}
+                                />
+
+                                <Controller name="pressname" control={form.control}
+                                    render={({ field }) => <Input {...field} />}
+                                />
+
+                                <RichTextEditor content={content} onChange={setContent} />
+
+                                <Button type="submit" className="mt-4">
+                                    Update
+                                </Button>
+                            </FieldSet>
+                        </form>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

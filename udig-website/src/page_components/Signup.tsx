@@ -91,7 +91,7 @@ export default function Signup() {
                 return
             }
 
-            const res = await fetch(import.meta.env.VITE_MONGO_CONTROLLER_URL + "/accounts/signup", {
+            const res = await fetch(import.meta.env.VITE_MONGO_CONTROLLER_URL + "/accounts/register", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({

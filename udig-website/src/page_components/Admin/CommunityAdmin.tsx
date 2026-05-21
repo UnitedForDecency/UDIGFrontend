@@ -77,7 +77,6 @@ export default function CommunityAdmin({ token }: TokenProp) {
     const addLeader = async () => {
         try {
             setLoading(true);
-            console.log("Adding leader:", newLeader);
             axios.post(
                 communityApiUrl,
                 {

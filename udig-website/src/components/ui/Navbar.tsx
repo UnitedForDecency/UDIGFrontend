@@ -72,6 +72,10 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
         { name: "Contribute", href: "/contribute" },
     ];
 
+        const whyDecency = [
+        { name: "Why Decency?", href: "/why-decency" },
+    ];
+
     return (
         <div>
             <div className="desktop-only">
@@ -122,6 +126,14 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                         </ul>
                                     </NavigationMenu.Content>
                                 </NavigationMenu.Item>
+
+                                {whyDecency.map((item) => (
+                                    <NavigationMenu.Item key={item.name}>
+                                        <NavigationMenu.Link href={item.href} className="hover:underline">
+                                            {item.name}
+                                        </NavigationMenu.Link>
+                                    </NavigationMenu.Item>
+                                ))}
 
                                 {/* PROGRAMS */}
                                 <NavigationMenu.Item

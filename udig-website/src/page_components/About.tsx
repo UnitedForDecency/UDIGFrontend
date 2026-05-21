@@ -18,30 +18,39 @@ export default function About() {
 
     /* ---------------- Fetch About Images ---------------- */
     const fetchImages = async () => {
-        try {
+    try {
         // Vision
-        const visionRes = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images?page=about&section=visionImages`);
+        const visionRes = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/section/visionImages`);
         const visionData = await visionRes.json();
-        setVisionImages(visionData.sort((a: ImageType, b: ImageType) => a.order - b.order));
+        setVisionImages(formatImages(visionData));
 
         // Mission
-        const missionRes = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images?page=about&section=missionImages`);
+        const missionRes = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/section/missionImages`);
         const missionData = await missionRes.json();
-        setMissionImages(missionData.sort((a: ImageType, b: ImageType) => a.order - b.order));
+        setMissionImages(formatImages(missionData));
 
-        // Our Story
-        const storyRes = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images?page=about&section=storyImages`);
+        // Story
+        const storyRes = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/section/storyImages`);
         const storyData = await storyRes.json();
-        setStoryImages(storyData.sort((a: ImageType, b: ImageType) => a.order - b.order));
+        setStoryImages(formatImages(storyData));
 
-        } catch (err) {
+    } catch (err) {
         console.error("Failed to fetch About images:", err);
-        }
-    };
+    }
+};
 
     useEffect(() => {
         fetchImages();
     }, []);
+
+    const formatImages = (data: any[]) => {
+        return data
+            .map((img) => ({
+                ...img,
+                url: `data:${img.mimetype || "image/png"};base64,${img.imageData}`
+            }))
+            .sort((a, b) => a.order - b.order);
+    };
 
     return (
         <section>

@@ -13,15 +13,24 @@ export default function Impact() {
     useEffect(() => {
         const fetchImages = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images?page=impact`);
+                const res = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/type/impact`);
                 const data = await res.json();
-                setHeaderImages(data);
+                setHeaderImages(formatImages(data));
             } catch (err) {
                 console.error("Failed to fetch Impact header images:", err);
             }
         };
         fetchImages();
     }, []);
+
+    const formatImages = (data: any[]) => {
+        return data
+            .map((img) => ({
+                ...img,
+                url: `data:${img.mimetype || "image/png"};base64,${img.imageData}`
+            }))
+            .sort((a, b) => a.order - b.order);
+    };
 
     useEffect(() => {
         const loadImpactCards = async () => {
@@ -65,7 +74,7 @@ export default function Impact() {
 
                     {highlights.map((card, idx) => (
                         <motion.div
-                            key={card._id}
+                            key={card.id}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: "-80px" }}
@@ -91,7 +100,7 @@ export default function Impact() {
                                 </CardHeader>
 
                                 <CardContent className="text-graphite text-lg flex-1">
-                                    {card.description}
+                                    {card.summary}
                                 </CardContent>
                             </Card>
                         </motion.div>
@@ -122,7 +131,7 @@ export default function Impact() {
                         </h2>
 
                         <p className="text-lg sm:text-xl text-graphite leading-relaxed">
-                            {activeCard.details}
+                            {activeCard.description}
                         </p>
                     </motion.div>
                 </div>

@@ -1,87 +1,38 @@
 import axios from "axios";
 
-export type VolunteerOrg = {
+export type VolunteerRole = {
     _id?: string;
-    name: string;
-    description: string;
-    link: string;
-    category: string; // like "Voting Rights", "Government Accountability"
+    role: string;
 };
 
-const API_BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL + "/api";
+const API_BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL || "http://localhost:3001";
+const VOLUNTEER_ROLE_BASE = `${API_BASE}/volunteer`;
 
-// Get all Volunteer Orgs
-export const getVolunteerOrgs = async (token: string): Promise<VolunteerOrg[]> => {
-    try {
-        const res = await axios.get(`${API_BASE}/volunteer`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        console.log("Volunteer API Response:", res.data);
+export const getVolunteerRoles = () =>
+    axios
+        .get<VolunteerRole[]>(VOLUNTEER_ROLE_BASE)
+        .then((res) => res.data);
 
-        //  normalize response
-        if (Array.isArray(res.data)) return res.data;
-        if (res.data && Array.isArray(res.data.data)) return res.data.data;
+export const getVolunteerRoleById = (id: string) =>
+    axios
+        .get<VolunteerRole>(`${VOLUNTEER_ROLE_BASE}/${id}`)
+        .then((res) => res.data);
 
-        console.warn("unexpected API response:", res.data);
-        return [];
-    } catch (err) {
-        console.error("Failed to fetch volunteer orgs:", err);
-        return [];
-    }
-};
+export const createVolunteerRole = (role: VolunteerRole, token: string) =>
+    axios.post(VOLUNTEER_ROLE_BASE, role, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
 
-// Create new org
-export const createVolunteerOrg = async (
-    org: Omit<VolunteerOrg, "_id">,
-    token: string
-) => {
-    try {
-        const res = await axios.post(`${API_BASE}/volunteer`, org, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        console.log("Create Volunteer Org response:", res.data);
-        return res;
-    } catch (err) {
-        console.error("Failed to create volunteer org:", err);
-        throw err;
-    }
-};
-
-// Update Org
-export const updateVolunteerOrg = async (
+export const updateVolunteerRole = (
     id: string,
-    updates: Partial<VolunteerOrg>,
+    role: Partial<VolunteerRole>,
     token: string
-) => {
-    try {
-        const res = await axios.put(`${API_BASE}/volunteer/${id}`, updates, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        console.log("Update Volunteer org response:", res.data);
-        return res;
-    } catch (err) {
-        console.error("Failed to update volunteer org:", err);
-        throw err;
-    }
-};
+) =>
+    axios.patch(`${VOLUNTEER_ROLE_BASE}/${id}`, role, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
 
-// Delete Org
-export const deleteVolunteerOrg = async (id: string, token: string) => {
-    try {
-        const res = await axios.delete(`${API_BASE}/volunteer/${id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        console.log("Delete Volunteer Org response:", res.data);
-        return res;
-    } catch (err) {
-        console.error("Failed to delete volunteer org:", err);
-    }
-};
+export const deleteVolunteerRole = (id: string, token: string) =>
+    axios.delete(`${VOLUNTEER_ROLE_BASE}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });

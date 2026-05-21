@@ -1,43 +1,93 @@
-import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel.tsx";
-import { type Leader, type Partner, getLeaders, getPartners } from "./Admin/LeaderAPI";
+import { type TokenProp } from "@/App";
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
-export default function Leadership() {
-    const [leaders, setLeaders] = useState<Leader[]>([]);
-    const [partners, setPartners] = useState<Partner[]>([]);
+
+type LeaderAccount = {
+    id?: string;
+    _id?: string;
+    username?: string;
+    email?: string;
+    role?: string;
+    city?: string;
+    state?: string;
+};
+
+export default function Leadership({ token }: TokenProp) {
+    const [leaders, setLeaders] = useState<LeaderAccount[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+
         const fetchData = async () => {
             try {
-                const [leadersData, partnersData] = await Promise.all([
-                    getLeaders(),
-                    getPartners(),
-                ]);
-                setLeaders(Array.isArray(leadersData) ? leadersData : []);
-                setPartners(Array.isArray(partnersData) ? partnersData : []);
+                setLoading(true);
+                setError(null);
+
+                const res = await axios.get(
+                    `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/accounts/get/role`,
+                    {
+                        params: { role: "LEADER" },
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                const data = Array.isArray(res.data) ? res.data : [];
+                setLeaders(data);
             } catch (err) {
-                console.error("Failed to fetch leadership data:", err);
+                console.error("Failed to fetch leader data:", err);
+                setError("Failed to load leaders.");
+                setLeaders([]);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchData();
-    }, []);
+    }, [token]);
+
+    const displayLeaders = useMemo(
+        () =>
+            leaders
+                .map((leader) => ({
+                    id: leader.id ?? leader._id ?? leader.username ?? leader.email ?? crypto.randomUUID(),
+                    username: leader.username ?? "Unknown",
+                    email: leader.email ?? "No email",
+                    city: leader.city ?? "Unknown city",
+                    state: leader.state ?? "Unknown state",
+                    role: leader.role ?? "LEADER",
+                }))
+                .filter((leader) => leader.role === "LEADER"),
+        [leaders]
+    );
 
     return (
-        <section className="bg-alice-blue">
-
-            {/* Header */}
+        <section className="bg-alice-blue min-h-screen">
             <div className="text-center py-20">
                 <h1 className="text-5xl font-bold text-yale-blue underline decoration-brick-ember underline-offset-4">
-                    Our Leadership
+                    Our Leaders
                 </h1>
                 <p className="text-xl text-graphite max-w-2xl mx-auto mt-4">
                     Meet the people guiding our mission and empowering communities nationwide.
                 </p>
             </div>
+
+            {error && (
+                <div className="max-w-4xl mx-auto px-4 mb-8">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <p className="text-red-800 font-medium">{error}</p>
+                    </div>
+                </div>
+            )}
 
             {loading && (
                 <div className="flex justify-center items-center py-24">
@@ -45,70 +95,82 @@ export default function Leadership() {
                 </div>
             )}
 
-            {/* Leaders Section */}
             {!loading && (
                 <div className="max-w-6xl mx-auto px-4 pb-20">
-                    {leaders.length === 0 && (
+                    {displayLeaders.length === 0 ? (
                         <p className="text-center text-graphite text-lg py-12">No leaders yet.</p>
+                    ) : (
+                        <Card className="shadow-lg border-2 border-midnight-slate">
+                            <CardHeader>
+                                <CardTitle className="text-xl">Leaders ({displayLeaders.length})</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">
+                                                    Username
+                                                </th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">
+                                                    Email
+                                                </th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">
+                                                    Location
+                                                </th>
+                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">
+                                                    Role
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 bg-white">
+                                            {displayLeaders.map((leader) => (
+                                                <tr key={leader.id} className="align-top">
+                                                    <td className="px-4 py-4 min-w-40">
+                                                        <span className="font-medium text-gray-900">
+                                                            {leader.username}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 min-w-52">
+                                                        <span className="text-gray-700">{leader.email}</span>
+                                                    </td>
+                                                    <td className="px-4 py-4 min-w-44">
+                                                        <span className="text-gray-700">
+                                                            {leader.city}, {leader.state}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 min-w-36">
+                                                        <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+                                                            {leader.role}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
                     )}
-                    {leaders.map((leader, idx) => (
-                        <div
-                            key={leader._id}
-                            className={`flex flex-col md:flex-row items-center mb-16 p-8 rounded-2xl shadow-lg border-2 border-midnight-slate ${
-                                idx % 2 === 0 ? "bg-porcelain" : "bg-burnt-crimson/90"
-                            } ${idx % 2 === 1 ? "md:flex-row-reverse" : ""}`}
-                        >
-                            <div className="flex justify-center md:w-1/2">
-                                {leader.imageUrl ? (
-                                    <img
-                                        src={leader.imageUrl}
-                                        alt={leader.name}
-                                        className="rounded-2xl w-64 h-64 object-cover shadow-xl"
-                                    />
-                                ) : (
-                                    <div className="rounded-2xl w-64 h-64 bg-gray-200 flex items-center justify-center shadow-xl">
-                                        <span className="text-gray-400 text-5xl">👤</span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex flex-col justify-center text-center md:text-left md:w-1/2 px-5">
-                                <h2 className="text-2xl font-bold text-yale-blue">{leader.name}</h2>
-                                <p className="text-lg text-graphite mb-4">{leader.title}</p>
-                                <p className="text-graphite">{leader.bio}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                    <div className="mt-12 text-center">
+                        <div className="bg-white border-2 border-midnight-slate rounded-2xl shadow-md p-8 max-w-3xl mx-auto">
+                            <h2 className="text-3xl font-bold text-yale-blue mb-4">
+                                Want to Connect With Our Community?
+                            </h2>
 
-            {/* Partners Carousel */}
-            {!loading && partners.length > 0 && (
-                <div className="max-w-6xl mx-auto px-4 pb-20">
-                    <h2 className="text-4xl font-bold text-yale-blue text-center mb-10">Our Partners</h2>
-                    <Carousel className="w-full">
-                        <CarouselContent className="-ml-1">
-                            {partners.map((partner) => (
-                                <CarouselItem key={partner._id} className="pl-1 md:basis-1/2 lg:basis-1/4">
-                                    <Card className="border-2 border-golden-bronze shadow-lg rounded-xl flex flex-col items-center p-4">
-                                        {partner.imageUrl ? (
-                                            <img
-                                                src={partner.imageUrl}
-                                                alt={partner.name}
-                                                className="w-36 h-36 object-cover rounded-full mb-4"
-                                            />
-                                        ) : (
-                                            <div className="w-36 h-36 rounded-full bg-gray-200 flex items-center justify-center mb-4">
-                                                <span className="text-gray-400 text-4xl">🤝</span>
-                                            </div>
-                                        )}
-                                        <p className="text-graphite font-semibold text-center">{partner.name}</p>
-                                    </Card>
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                        <CarouselPrevious />
-                        <CarouselNext />
-                    </Carousel>
+                            <p className="text-graphite text-lg mb-6">
+                                Meet more members, collaborate on initiatives, and get involved with
+                                people making a difference nationwide.
+                            </p>
+
+                            <Link
+                                to="/get-involved/community"
+                                className="inline-flex items-center rounded-xl bg-yale-blue px-6 py-3 text-white font-semibold shadow hover:bg-blue-900 transition-colors duration-200"
+                            >
+                                Visit Our Community
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             )}
         </section>

@@ -5,13 +5,14 @@ import DOMPurify from "dompurify";
 const PAGE_SIZE = 4;
 
 interface PressCoverage {
-    _id: string;
+    id: string;
     title: string;
     description: string;
     contents: string;
     pressname: string;
     readTime?: string;
     dateUploaded?: string;
+    link?: string;
 }
 
 export default function PressCoverage() {
@@ -28,7 +29,7 @@ export default function PressCoverage() {
 
     // Fetch data
     useEffect(() => {
-        axios.get(`${API_BASE}/presscoverage`)
+        axios.get(`${API_BASE}/press`)
             .then((res) => setPressCoverage(Array.isArray(res.data) ? res.data : []))
             .catch((err) => console.error("Failed to fetch presscoverage:", err))
             .finally(() => setLoading(false));
@@ -130,7 +131,7 @@ export default function PressCoverage() {
                     <div className="space-y-5">
                         {paginated.map((item) => (
                             <div
-                                key={item._id}
+                                key={item.id}
                                 onClick={() => {
                                     setSelectedCoverage(item);
                                     setIsModalOpen(true);
@@ -157,6 +158,7 @@ export default function PressCoverage() {
                                         <p className="text-sm text-graphite leading-relaxed">
                                             {item.description}
                                         </p>
+
                                     </div>
 
                                     <span className="text-xl text-steel-blue-grey group-hover:text-brick-ember transition-colors">
@@ -238,6 +240,17 @@ export default function PressCoverage() {
                                 <p className="text-sm text-graphite">
                                     {selectedCoverage.description}
                                 </p>
+
+                                {selectedCoverage.link && (
+                                    <a
+                                        href={selectedCoverage.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-sm text-yale-blue hover:underline mt-2 inline-block"
+                                    >
+                                        View original source →
+                                    </a>
+                                )}
                             </div>
 
                             {/* CONTENT */}

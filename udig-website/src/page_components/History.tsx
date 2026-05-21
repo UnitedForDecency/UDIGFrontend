@@ -13,6 +13,7 @@ export default function History() {
     const [milestones, setMilestones] = useState<Milestone[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [images, setImages] = useState<Record<string, string>>({});
 
     useEffect(() => {
         const fetchMilestones = async () => {
@@ -34,6 +35,43 @@ export default function History() {
         };
         fetchMilestones();
     }, []);
+
+    useEffect(() => {
+        if (!milestones.length) return;
+
+        const loadImages = async () => {
+            const results = await Promise.all(
+                milestones
+                    .filter((m) => m.imageId)
+                    .map(async (m) => {
+                        try {
+                            const res = await fetch(
+                                `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/${m.imageId}`
+                            );
+
+                            const data = await res.json();
+
+                            if (!data?.imageData) return null;
+
+                            return [
+                                m.imageId!,
+                                `data:image/png;base64,${data.imageData}`,
+                            ] as [string, string];
+                        } catch {
+                            return null;
+                        }
+                    })
+            );
+
+            const map = Object.fromEntries(
+                results.filter(Boolean) as [string, string][]
+            );
+
+            setImages(map);
+        };
+
+        loadImages();
+    }, [milestones]);
 
     return (
         <section className="bg-alice-blue py-20">
@@ -78,11 +116,16 @@ export default function History() {
                         const isLeft = idx % 2 === 0;
 
                         return (
-                            <div key={m._id} className="relative flex items-center mb-24">
+                            <div key={m.id} className="relative flex items-center mb-24">
 
                                 {/* LEFT SIDE */}
                                 <div className="w-1/2 pr-10 flex justify-end">
-                                    {isLeft && <MilestoneCard milestone={m} />}
+                                    {isLeft && (
+                                        <MilestoneCard
+                                            milestone={m}
+                                            image={m.imageId ? images[m.imageId] : undefined}
+                                        />
+                                    )}
                                 </div>
 
                                 {/* CENTER DOT */}
@@ -90,7 +133,12 @@ export default function History() {
 
                                 {/* RIGHT SIDE */}
                                 <div className="w-1/2 pl-10 flex justify-start">
-                                    {!isLeft && <MilestoneCard milestone={m} />}
+                                    {!isLeft && (
+                                        <MilestoneCard
+                                            milestone={m}
+                                            image={m.imageId ? images[m.imageId] : undefined}
+                                        />
+                                    )}
                                 </div>
 
                             </div>
@@ -102,7 +150,13 @@ export default function History() {
     );
 }
 
-function MilestoneCard({ milestone: m }: { milestone: Milestone }) {
+function MilestoneCard({
+        milestone: m,
+        image,
+    }: {
+        milestone: Milestone;
+        image?: string;
+    }) {
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -113,7 +167,7 @@ function MilestoneCard({ milestone: m }: { milestone: Milestone }) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="text-graphite text-lg">
-                        {m.description}
+                        {m.summary}
                     </CardContent>
                 </Card>
             </DialogTrigger>
@@ -127,14 +181,14 @@ function MilestoneCard({ milestone: m }: { milestone: Milestone }) {
                 </DialogHeader>
 
                 <div className="space-y-6 text-lg text-graphite">
-                    {m.imageUrl && (
+                    {image && (
                         <img
-                            src={m.imageUrl}
+                            src={image}
                             alt={m.title}
                             className="w-full h-64 object-cover rounded-lg shadow-md"
                         />
                     )}
-                    <p>{m.details}</p>
+                    <p>{m.description}</p>
                 </div>
             </DialogContent>
         </Dialog>

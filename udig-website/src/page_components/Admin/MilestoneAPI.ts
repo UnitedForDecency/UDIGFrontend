@@ -1,14 +1,15 @@
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL + "/api";
+const BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL;
 
 export interface Milestone {
-    _id: string;
+    id: string;
     year: string;
     title: string;
+    summary: string;
     description: string;
-    details: string;
-    imageUrl?: string;
+    imageId?: string;
 }
 
 export async function getMilestones(): Promise<Milestone[]> {
@@ -17,7 +18,7 @@ export async function getMilestones(): Promise<Milestone[]> {
 }
 
 export async function createMilestone(
-    data: Omit<Milestone, "_id">,
+    data: Omit<Milestone, "id">,
     token: string
 ) {
     const res = await axios.post(`${API_BASE}/milestones`, data, {
@@ -37,7 +38,11 @@ export async function updateMilestone(
     return res;
 }
 
-export async function deleteMilestone(id: string, token: string) {
+export async function deleteMilestone(id: string, imageId: string, token: string) {
+    await axios.delete(`${BASE}/images/${imageId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    })
+    
     const res = await axios.delete(`${API_BASE}/milestones/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
     });

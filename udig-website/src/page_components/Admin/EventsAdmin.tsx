@@ -14,22 +14,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { states, localityTypes } from "@/lib/constants"
+import { localityTypes } from "@/lib/constants"
 import { Label } from "@/components/ui/label"
+import { State, City } from "country-state-city";
+import type { ICity } from "country-state-city";
 
 type Event = {
-    _id?: string;
+    id?: string;
     name?: string;
     description?: string;
-    image?: string;
+    imageId?: string;
     link?: string;
     address?: string;
-    city?: string;
-    state?: string;
-    county?: string;
-    start?: Date;
-    end?: Date;
-    locality?: number;
+    city?: string | null;
+    state?: string | null;
+    startDate?: Date;
+    endDate?: Date;
 }
 
 export default function EventsAdmin({ token }: TokenProp) {
@@ -38,14 +38,13 @@ export default function EventsAdmin({ token }: TokenProp) {
     const [newEvent, setNewEvent] = useState<Event>({
         name: "",
         description: "",
-        image: "",
+        imageId: "",
         link: "",
         address: "",
         city: "",
         state: "",
-        start: new Date(),
-        end: new Date(),
-        locality: undefined
+        startDate: new Date(),
+        endDate: new Date(),
     });
     const [loading, setLoading] = useState(false);
     const [multiDay, setMultiDay] = useState(false);
@@ -56,6 +55,12 @@ export default function EventsAdmin({ token }: TokenProp) {
     const [searchCity, setSearchCity] = useState("");
     const [searchState, setSearchState] = useState("");
     const [searchKeyword, setSearchKeyword] = useState("");
+
+    const states = State.getStatesOfCountry("US");
+    const [selectedState, setSelectedState] = useState("");
+    const [cities, setCities] = useState<ICity[]>([]);
+    const [file, setFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string>("");
 
     const eventsPerPage = 6;
 
@@ -68,13 +73,31 @@ export default function EventsAdmin({ token }: TokenProp) {
         fetchEvents();
     }, [token]);
 
+    useEffect(() => {
+    if (selectedState) {
+        const cityList = City.getCitiesOfState("US", selectedState);
+        setCities(cityList);
+    } else {
+        setCities([]);
+    }
+    }, [selectedState]);
+
+    useEffect(() => {
+        if (newEvent.state) {
+            setSelectedState(newEvent.state);
+
+            const cityList = City.getCitiesOfState("US", newEvent.state);
+            setCities(cityList);
+        }
+    }, [newEvent.state]);
+
     const fetchEvents = async () => {
         try {
             axios.get(
                 eventsApiUrl,
                 authHeaders
             ).then(res => {
-                setEvents(res.data.events ?? []);
+                setEvents(res.data ?? []);
             }).catch((err: AxiosError) => {
                 if (err.response && err.response.status === 404) return; 
                 notifyApiError(err, "fetch events");
@@ -85,18 +108,23 @@ export default function EventsAdmin({ token }: TokenProp) {
         }
     };
 
+        
+    const handleImageUpload = (file: File) => {
+        setFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
     const resetNewEvent = () => {
         setNewEvent({
             name: "",
             description: "",
-            image: "",
+            imageId: "",
             link: "",
             address: "",
             city: "",
             state: "",
-            start: new Date(),
-            end: new Date(),
-            locality: undefined
+            startDate: new Date(),
+            endDate: new Date(),
         });
         setEditingEventId(null);
     }
@@ -104,7 +132,7 @@ export default function EventsAdmin({ token }: TokenProp) {
     const beginCreatingEvent = () => {
         setEditingEventIsNew(true);
         resetNewEvent();
-        setEditingEventId("New event, ID not yet assigned");
+        setEditingEventId("new");
         setMultiDay(false);
     }
 
@@ -112,31 +140,53 @@ export default function EventsAdmin({ token }: TokenProp) {
         try {
             setLoading(true);
 
-            axios.post(
+            let imageId = "";
+
+            if (file) {
+                const formData = new FormData();
+                formData.append("image", file);
+                formData.append("type", "event");
+                formData.append("section", newEvent.state || "general");
+
+                const uploadRes = await axios.post(
+                    `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/upload`,
+                    formData,
+                    authHeaders
+                );
+
+                imageId = uploadRes.data.id;
+            }
+
+            const clean = (v: any) => (v === "" || v === undefined ? null : v);
+
+            await axios.post(
                 eventsApiUrl,
                 {
-                    name: newEvent.name,
-                    description: newEvent.description || undefined,
-                    image: newEvent.image || undefined,
-                    link: newEvent.link || undefined,
-                    address: newEvent.address || undefined,
-                    city: newEvent.city || undefined,
-                    state: newEvent.state || undefined,
-                    start: newEvent.start || undefined,
-                    end: newEvent.end || undefined,
-                    locality: newEvent.locality
+                    ...newEvent,
+                    imageId: imageId || null,
+                    name: clean(newEvent.name),
+                    description: clean(newEvent.description),
+                    link: clean(newEvent.link),
+                    address: clean(newEvent.address),
+                    city: clean(newEvent.city),
+                    state: clean(newEvent.state),
+                    startDate: newEvent.startDate ?? null,
+                    endDate: newEvent.endDate ?? null,
                 },
                 authHeaders
-            ).then(res => {
-                setEvents(prev => [...prev, { _id: res.data.eventId, ...newEvent }]);
-                resetNewEvent();
-                fetchEvents();
-            }).catch((err: AxiosError) => {
-                notifyApiError(err, "add event");
-            });
-        } catch (err: any) {
-            console.error(err);
-            alert(`An unexpected error occured: ${err}`);
+            );
+
+            await fetchEvents();
+
+            resetNewEvent();
+            setFile(null);
+            setImagePreview("");
+            setEditingEventId(null);
+            setEditingEventIsNew(false);
+            setMultiDay(false);
+
+        } catch (err) {
+            notifyApiError(err as any, "add event");
         } finally {
             setLoading(false);
         }
@@ -153,19 +203,18 @@ export default function EventsAdmin({ token }: TokenProp) {
                 const selectedEvent = {
                     name: res.data.name,
                     description: res.data.description,
-                    image: res.data.image,
+                    imageId: res.data.imageId,
                     link: res.data.link,
                     address: res.data.address,
                     city: res.data.city,
                     state: res.data.state,
-                    start: new Date(res.data.start),
-                    end: new Date(res.data.end),
-                    locality: res.data.locality
+                    startDate: new Date(res.data.startDate),
+                    endDate: new Date(res.data.endDate),
                 }
                 setNewEvent(selectedEvent);
-                setMultiDay(selectedEvent.start?.getDate() != selectedEvent.end?.getDate()
-                    || selectedEvent.start?.getMonth() != selectedEvent.end?.getMonth()
-                    || selectedEvent.start?.getFullYear() != selectedEvent.end?.getFullYear());
+                setMultiDay(selectedEvent.startDate?.getDate() != selectedEvent.endDate?.getDate()
+                    || selectedEvent.startDate?.getMonth() != selectedEvent.endDate?.getMonth()
+                    || selectedEvent.startDate?.getFullYear() != selectedEvent.endDate?.getFullYear());
 
                 setEditingEventId(id);
             }).catch((err: AxiosError) => {
@@ -187,19 +236,50 @@ export default function EventsAdmin({ token }: TokenProp) {
         if (!editingEventId) return;
 
         try {
-            axios.put(
+            setLoading(true);
+
+            let imageId = newEvent.imageId;
+
+            if (file) {
+                const formData = new FormData();
+                formData.append("image", file);
+                formData.append("type", "event");
+                formData.append("section", newEvent.state || "general");
+
+                const uploadRes = await axios.post(
+                    `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/upload`,
+                    formData,
+                    authHeaders
+                );
+
+                imageId = uploadRes.data.id;
+            }
+
+            const updatedEvent = {
+                ...newEvent,
+                imageId,
+            };
+
+            const res = await axios.put(
                 `${eventsApiUrl}/${editingEventId}`,
-                newEvent,
+                updatedEvent,
                 authHeaders
-            ).then(res => {
-                setEvents((prev) => prev.map((e) => e._id === editingEventId ? res.data.event : e));
-                resetNewEvent();
-            }).catch((err: AxiosError) => {
-                notifyApiError(err, "save event");
-            });
-        } catch (err: any) {
-            console.error(err);
-            alert(`An unexpected error occured: ${err}`);
+            );
+
+            setEvents(prev =>
+                prev.map(e =>
+                    e.id === editingEventId ? res.data.event : e
+                )
+            );
+
+            resetNewEvent();
+            setFile(null);
+            setImagePreview("");
+            fetchEvents()
+        } catch (err) {
+            notifyApiError(err as any, "save event");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -212,10 +292,11 @@ export default function EventsAdmin({ token }: TokenProp) {
                 `${eventsApiUrl}/${id}`,
                 authHeaders
             ).then(() => {
-                setEvents((prev) => prev.filter((e) => e._id !== id));
+                setEvents((prev) => prev.filter((e) => e.id !== id));
             }).catch((err: AxiosError) => {
                 notifyApiError(err, "delete event");
             });
+            fetchEvents()
         } catch (err: any) {
             console.error(err);
             alert(`An unexpected error occured: ${err}`);
@@ -271,34 +352,72 @@ export default function EventsAdmin({ token }: TokenProp) {
             {/* Event Search */}
             <Card className="mb-6">
                 <CardContent>
-                    <div className="flex justify-center gap-2">
-                        <Select value={searchState} onValueChange={(value) => setSearchState(value)}>
+                    <div className="flex flex-wrap justify-center gap-2">
+
+                        {/* STATE */}
+                        <Select
+                            value={newEvent.state || ""}
+                            onValueChange={(value) => {
+                                setNewEvent({
+                                    ...newEvent,
+                                    state: value || null,
+                                    city: null, // reset city when state changes
+                                });
+
+                                const cityList = City.getCitiesOfState("US", value);
+                                setCities(cityList);
+                            }}
+                        >
                             <SelectTrigger className="w-full max-w-48">
                                 <SelectValue placeholder="State" />
                             </SelectTrigger>
-                            <SelectContent position="popper">
+                            <SelectContent>
                                 <SelectGroup>
                                     <SelectLabel>State</SelectLabel>
-                                    {Object.entries(states).map(([value, label]) => (
-                                        <SelectItem key={value} value={value}>
-                                            {label}
+                                    {states.map((s) => (
+                                        <SelectItem key={s.isoCode} value={s.isoCode}>
+                                            {s.name}
                                         </SelectItem>
                                     ))}
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
-                        <Input
-                            className="p-2 rounded w-65"
-                            placeholder="City"
-                            value={searchCity}
-                            onChange={e => setSearchCity(e.target.value)}
-                        />
+
+                        {/* CITY */}
+                        <Select
+                            value={newEvent.city || ""}
+                            onValueChange={(value) =>
+                                setNewEvent({
+                                    ...newEvent,
+                                    city: value || null,
+                                })
+                            }
+                            disabled={!newEvent.state}
+                        >
+                            <SelectTrigger className="w-full max-w-48">
+                                <SelectValue placeholder="City" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectLabel>City</SelectLabel>
+                                    {cities.map((city) => (
+                                        <SelectItem key={city.name} value={city.name}>
+                                            {city.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+
+                        {/* KEYWORD */}
                         <Input
                             className="p-2 rounded w-80"
                             placeholder="Keyword"
                             value={searchKeyword}
                             onChange={e => setSearchKeyword(e.target.value)}
                         />
+
+                        {/* BUTTONS */}
                         <button
                             onClick={clearSearchFilter}
                             disabled={loading}
@@ -306,6 +425,7 @@ export default function EventsAdmin({ token }: TokenProp) {
                         >
                             Clear Filters
                         </button>
+
                         <button
                             onClick={searchEvents}
                             disabled={loading}
@@ -313,6 +433,7 @@ export default function EventsAdmin({ token }: TokenProp) {
                         >
                             Search
                         </button>
+
                     </div>
                 </CardContent>
             </Card>
@@ -330,9 +451,12 @@ export default function EventsAdmin({ token }: TokenProp) {
                 <CardContent>
                     { events.length !== 0 &&
                         <div className="flex flex-wrap justify-center mb-3">
-                            {events.slice(pageNumber * eventsPerPage, ((pageNumber + 1) * eventsPerPage)).map((event) => (
+                            {events
+                            .filter((event): event is Event => !!event)
+                            .slice(pageNumber * eventsPerPage, (pageNumber + 1) * eventsPerPage)
+                            .map((event) => (
                                 <div
-                                    key={event._id}
+                                    key={event.id}
                                     className="w-[20rem] h-[10rem] border border-gray-200 rounded-lg p-[1.5rem] m-[0.8rem] bg-white hover:shadow-md transition-shadow"
                                 >
                                     <div className="flex flex-col justify-center gap-4">
@@ -355,15 +479,16 @@ export default function EventsAdmin({ token }: TokenProp) {
                                         </div>
                                         <div className="flex gap-2 flex-shrink-0 justify-center">
                                             <button
+                                            
                                                 onClick={() => {
-                                                    beginEditingEvent(event._id);
+                                                    beginEditingEvent(event.id);
                                                 }}
                                                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
                                             >
                                                 Edit
                                             </button>
                                             <button
-                                                onClick={() => deleteEvent(event._id)}
+                                                onClick={() => deleteEvent(event.id)}
                                                 className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
                                             >
                                                 Delete
@@ -406,9 +531,10 @@ export default function EventsAdmin({ token }: TokenProp) {
             {
                 /* Edit Event */
                 editingEventId &&
+                
                 <Card className="mb-8">
                     <CardHeader>
-                            <CardTitle className="text-xl">{editingEventId == "New event, ID not yet assigned" ? "Create Event" : "Edit Event"}</CardTitle>
+                            <CardTitle className="text-xl">{editingEventId === "new" ? "Create Event" : "Edit Event"}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <h3 className="flex flex-wrap font-semibold mb-2">Basic Information</h3>
@@ -430,12 +556,24 @@ export default function EventsAdmin({ token }: TokenProp) {
                                 />
                             </div>
                             <div>
+                                <Label>Event Image</Label>
+
                                 <Input
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Image link"
-                                    value={newEvent.image}
-                                    onChange={e => setNewEvent({ ...newEvent, image: e.target.value })}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        if (e.target.files?.[0]) {
+                                            handleImageUpload(e.target.files[0]);
+                                        }
+                                    }}
                                 />
+
+                                {imagePreview && (
+                                    <img
+                                        src={imagePreview}
+                                        className="mt-2 w-40 h-40 object-cover rounded"
+                                    />
+                                )}
                             </div>
                             <div>
                                 <Input
@@ -445,67 +583,79 @@ export default function EventsAdmin({ token }: TokenProp) {
                                     onChange={e => setNewEvent({ ...newEvent, link: e.target.value })}
                                 />
                             </div>
-                            <h3 className="flex flex-wrap font-semibold mb-2">Location</h3>
                             <div>
-                                <Select value={newEvent.locality?.toString()} onValueChange={(value) => setNewEvent({ ...newEvent, locality: Number.parseInt(value) })}>
-                                    <SelectTrigger className="w-full max-w-48">
-                                        <SelectValue placeholder="Locality" />
-                                    </SelectTrigger>
-                                    <SelectContent position="popper">
-                                        <SelectGroup>
-                                            <SelectLabel>Locality</SelectLabel>
-                                            {Object.entries(localityTypes).map(([label, value]) => (
-                                                <SelectItem key={value} value={value + ""}>
-                                                    {label + "-wide"}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                <Input
+                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Address"
+                                    value={newEvent.address}
+                                    onChange={e => setNewEvent({ ...newEvent, address: e.target.value })}
+                                />
                             </div>
-                            {(newEvent.locality != undefined && newEvent.locality != 2) &&
+                            <h3 className="flex flex-wrap font-semibold mb-2">Location</h3>
                                 <div className="flex flex-wrap gap-2 pb-4">
-                                    {newEvent.locality == 0 &&
-                                        <>
-                                            <Input
-                                                type="text"
-                                                className="p-2 rounded flex-1"
-                                                placeholder="Address"
-                                                value={newEvent.address}
-                                                onChange={e => setNewEvent({ ...newEvent, address: e.target.value })}
-                                            />
-                                            <Input
-                                                className="p-2 rounded flex-1"
-                                                placeholder="City"
-                                                value={newEvent.city}
-                                                onChange={e => setNewEvent({ ...newEvent, city: e.target.value })}
-                                            />
-                                        </>
-                                    }
-                                    <Select value={newEvent.state} onValueChange={(value) => setNewEvent({ ...newEvent, state: value })}>
+                                    {/* STATE */}
+                                    <Select
+                                        value={newEvent.state || ""}
+                                        onValueChange={(value) => {
+                                            setNewEvent({
+                                                ...newEvent,
+                                                state: value || null,
+                                                city: null, // reset city when state changes
+                                            });
+
+                                            const cityList = City.getCitiesOfState("US", value);
+                                            setCities(cityList);
+                                        }}
+                                    >
                                         <SelectTrigger className="w-full max-w-48">
                                             <SelectValue placeholder="State" />
                                         </SelectTrigger>
-                                        <SelectContent position="popper">
+                                        <SelectContent>
                                             <SelectGroup>
                                                 <SelectLabel>State</SelectLabel>
-                                                {Object.entries(states).map(([value, label]) => (
-                                                    <SelectItem key={value} value={value}>
-                                                        {label}
+                                                {states.map((s) => (
+                                                    <SelectItem key={s.isoCode} value={s.isoCode}>
+                                                        {s.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+
+                                    {/* CITY */}
+                                    <Select
+                                    value={newEvent.city || ""}
+                                    onValueChange={(value) =>
+                                        setNewEvent({
+                                            ...newEvent,
+                                            city: value || null,
+                                        })
+                                    }
+                                    disabled={!newEvent.state}
+                                >
+                                        <SelectTrigger className="w-full max-w-48">
+                                            <SelectValue placeholder="City" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectLabel>City</SelectLabel>
+                                                {cities.map((city) => (
+                                                    <SelectItem key={city.name} value={city.name}>
+                                                        {city.name}
                                                     </SelectItem>
                                                 ))}
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
                                 </div>
-                            }
+                            
                             <h3 className="flex flex-wrap font-semibold mb-2">Time</h3>
                             <div className="flex flex-wrap gap-2 pb-4">
                                 <Label>One-day</Label>
                                     <Switch checked={multiDay} onCheckedChange={e => {
                                         setMultiDay(e)
                                         if (!e) {
-                                            setNewEvent({ ...newEvent, end: newEvent.start })
+                                            setNewEvent({ ...newEvent, endDate: newEvent.startDate })
                                         }
                                     }} />
                                 <Label>Multi-day</Label>
@@ -518,10 +668,10 @@ export default function EventsAdmin({ token }: TokenProp) {
                                             type="date"
                                             placeholder="Start time"
                                             className="p-2 rounded w-50"
-                                            value={newEvent.start?.toLocaleDateString('en-CA')}
+                                            value={newEvent.startDate?.toLocaleDateString('en-CA')}
                                             onChange={e => {
                                                 const inputDate = new Date(e.target.value + "T00:00:00")
-                                                setNewEvent({ ...newEvent, start: inputDate, end: inputDate })
+                                                setNewEvent({ ...newEvent, startDate: inputDate, endDate: inputDate })
                                             }}
                                         />
                                     </div>
@@ -536,15 +686,15 @@ export default function EventsAdmin({ token }: TokenProp) {
                                                 type="date"
                                                 placeholder="Start date"
                                                 className="p-2 rounded w-50"
-                                                value={newEvent.start?.toLocaleDateString('en-CA')}
+                                                value={newEvent.startDate?.toLocaleDateString('en-CA')}
                                                 onChange={e => {
                                                     const inputDate = new Date(e.target.value + "T00:00:00")
-                                                    let currentDate = newEvent.start;
+                                                    let currentDate = newEvent.startDate;
                                                     if (currentDate == undefined) currentDate = new Date()
 
                                                     currentDate.setFullYear(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate())
 
-                                                    setNewEvent({ ...newEvent, start: currentDate })
+                                                    setNewEvent({ ...newEvent, startDate: currentDate })
                                                 }}
                                             />
                                         </div>
@@ -554,15 +704,15 @@ export default function EventsAdmin({ token }: TokenProp) {
                                                 type="date"
                                                 placeholder="End date"
                                                 className="p-2 rounded w-50"
-                                                value={newEvent.end?.toLocaleDateString('en-CA')}
+                                                value={newEvent.endDate?.toLocaleDateString('en-CA')}
                                                 onChange={e => {
                                                     const inputDate = new Date(e.target.value + "T00:00:00")
-                                                    let currentDate = newEvent.end;
+                                                    let currentDate = newEvent.endDate;
                                                     if (currentDate == undefined) currentDate = new Date()
 
                                                     currentDate.setFullYear(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate())
 
-                                                    setNewEvent({ ...newEvent, end: currentDate })
+                                                    setNewEvent({ ...newEvent, endDate: currentDate })
                                                 }}
                                             />
                                         </div>
@@ -573,11 +723,6 @@ export default function EventsAdmin({ token }: TokenProp) {
                                 editingEventIsNew && (
                                     <button
                                         onClick={addEvent}
-                                            disabled={
-                                                loading || !newEvent.name || !newEvent.description || !newEvent.image || !newEvent.link || newEvent.locality === undefined
-                                                || (newEvent.locality != localityTypes.Nation && !newEvent.state) || (newEvent.locality == localityTypes.City && (!newEvent.city || !newEvent.address))
-                                                || !newEvent.start || !newEvent.end || (newEvent.end < newEvent.start)
-                                            }
                                         className="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-lg"
                                     >
                                         {loading ? (
@@ -599,9 +744,9 @@ export default function EventsAdmin({ token }: TokenProp) {
                                     <button
                                         onClick={saveEventEdit}
                                         disabled={
-                                            loading || !newEvent.name || !newEvent.description || !newEvent.image || !newEvent.link || newEvent.locality === undefined
-                                            || (newEvent.locality != localityTypes.Nation && !newEvent.state) || (newEvent.locality == localityTypes.City && !newEvent.city)
-                                            || !newEvent.start || !newEvent.end || (newEvent.end < newEvent.start)
+                                            loading || !newEvent.name || !newEvent.description || !newEvent.imageId || !newEvent.link
+                                            || (!newEvent.state) || (localityTypes.City && !newEvent.city)
+                                            || !newEvent.startDate || !newEvent.endDate || (newEvent.endDate < newEvent.startDate)
                                         }
                                         className="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-lg"
                                     >
