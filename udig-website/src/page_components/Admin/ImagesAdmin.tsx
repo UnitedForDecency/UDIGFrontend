@@ -16,50 +16,15 @@ export interface ImageType {
 const DEFAULT_PAGE_SECTIONS: Record<string, string[]> = {
     home: ["MainImage", "CallForDecency", "RoadTrip", "Billboard", "Contests", "Engagement", "Petition", "Pledge Challenges", "Decency Certification"],
     WhyDecency: [
-        "Carousel",
-        "Gandhi",
-        "CarolynKennedy",
-        "Roosevelt",
-        "JohnAdams",
-        "Clemente",
-        "Carter",
-        "EdwardBrookes",
-        "ToniMorrison",
-        "EleanorRoosevelt",
-        "BariWeiss",
-        "MayaAngelou",
-        "Jesus",
-        "PopeLeo",
-        "JosephSmith",
-        "RichardMouw",
-        "Islam",
-        "Hillel",
-        "IrvingBerlin",
-        "Confucius",
-        "Hamilton",
-        "AndrewJohnson",
-        "JeffersonAdams2",
-        "Polk",
-        "Lincoln",
-        "McCarthy",
-        "USSMaddox",
-        "Lewinsky",
-        "Bush",
-        "Bush2",
-        "Hillary",
-        "Biden",
-        "Trump",
-        "Trump2",
-        "Trump3",
-        "Cabinet",
-        "ThomasPaine",
-        "JamesMadison",
-        "AlexanderHamilton",
-        "HenryClay",
-        "Emerson",
-        "JeffersonAdamsPortrait",
-        "Constitution",
+        "Carousel","Gandhi","CarolynKennedy","Roosevelt","JohnAdams","Clemente","Carter",
+        "EdwardBrookes","ToniMorrison","EleanorRoosevelt","BariWeiss","MayaAngelou","Jesus",
+        "PopeLeo","JosephSmith","RichardMouw","Islam","Hillel","IrvingBerlin","Confucius",
+        "Hamilton","AndrewJohnson","JeffersonAdams2","Polk","Lincoln","McCarthy","USSMaddox",
+        "Lewinsky","Bush","Bush2","Hillary","Biden","Trump","Trump2","Trump3","Cabinet",
+        "ThomasPaine","JamesMadison","AlexanderHamilton","HenryClay","Emerson",
+        "JeffersonAdamsPortrait","Constitution",
     ],
+    electiveOffices: [], // fetched via /type/electiveOffices — no sections needed
     navbar: ["logo"],
     about: ["visionImages", "missionImages", "storyImages"],
     getInvolved: ["getInvolvedHeaderImage", "communityGallery"],
@@ -70,6 +35,7 @@ const DEFAULT_PAGE_SECTIONS: Record<string, string[]> = {
 
 const DEFAULT_PAGE_LABELS: Record<string, string> = {
     home: "Home",
+    electiveOffices: "Elective Offices",
     WhyDecency: "Why Decency?",
     navbar: "Navbar",
     about: "About",
@@ -91,61 +57,25 @@ const DEFAULT_SECTION_LABELS: Record<string, Record<string, string>> = {
         PledgeChallenges: "Pledge Challenges",
         DecencyCertification: "Decency Certification",
     },
+    electiveOffices: {},
     WhyDecency: {
-        Carousel: "Carousel Images",
-        Gandhi: "Gandhi",
-        CarolynKennedy: "Carolyn Kennedy",
-        Roosevelt: "Roosevelt",
-        JohnAdams: "John Adams",
-        Clemente: "Clemente",
-        Carter: "Carter",
-        EdwardBrookes: "Edward Brookes",
-        ToniMorrison: "Toni Morrison",
-        EleanorRoosevelt: "Eleanor Roosevelt",
-        BariWeiss: "Bari Weiss",
-        MayaAngelou: "Maya Angelou",
-        Jesus: "Jesus",
-        PopeLeo: "Pope Leo",
-        JosephSmith: "Joseph Smith",
-        RichardMouw: "Richard Mouw",
-        Islam: "Islam",
-        Hillel: "Hillel",
-        IrvingBerlin: "Irving Berlin",
-        Confucius: "Confucius",
-        Hamilton: "Hamilton",
-        AndrewJohnson: "Andrew Johnson",
-        JeffersonAdams2: "Jefferson Adams 2",
-        Polk: "Polk",
-        Lincoln: "Lincoln",
-        McCarthy: "McCarthy",
-        USSMaddox: "USS Maddox",
-        Lewinsky: "Lewinsky",
-        Bush: "Bush",
-        Bush2: "Bush 2",
-        Hillary: "Hillary",
-        Biden: "Biden",
-        Trump: "Trump",
-        Trump2: "Trump 2",
-        Trump3: "Trump 3",
-        Cabinet: "Cabinet",
-        ThomasPaine: "Thomas Paine",
-        JamesMadison: "James Madison",
-        AlexanderHamilton: "Alexander Hamilton",
-        HenryClay: "Henry Clay",
-        Emerson: "Emerson",
-        JeffersonAdamsPortrait: "Jefferson Adams Portrait",
-        Constitution: "Constitution",
+        Carousel: "Carousel Images",Gandhi: "Gandhi",CarolynKennedy: "Carolyn Kennedy",
+        Roosevelt: "Roosevelt",JohnAdams: "John Adams",Clemente: "Clemente",Carter: "Carter",
+        EdwardBrookes: "Edward Brookes",ToniMorrison: "Toni Morrison",
+        EleanorRoosevelt: "Eleanor Roosevelt",BariWeiss: "Bari Weiss",MayaAngelou: "Maya Angelou",
+        Jesus: "Jesus",PopeLeo: "Pope Leo",JosephSmith: "Joseph Smith",RichardMouw: "Richard Mouw",
+        Islam: "Islam",Hillel: "Hillel",IrvingBerlin: "Irving Berlin",Confucius: "Confucius",
+        Hamilton: "Hamilton",AndrewJohnson: "Andrew Johnson",JeffersonAdams2: "Jefferson Adams 2",
+        Polk: "Polk",Lincoln: "Lincoln",McCarthy: "McCarthy",USSMaddox: "USS Maddox",
+        Lewinsky: "Lewinsky",Bush: "Bush",Bush2: "Bush 2",Hillary: "Hillary",Biden: "Biden",
+        Trump: "Trump",Trump2: "Trump 2",Trump3: "Trump 3",Cabinet: "Cabinet",
+        ThomasPaine: "Thomas Paine",JamesMadison: "James Madison",
+        AlexanderHamilton: "Alexander Hamilton",HenryClay: "Henry Clay",Emerson: "Emerson",
+        JeffersonAdamsPortrait: "Jefferson Adams Portrait",Constitution: "Constitution",
     },
     navbar: { logo: "Logo" },
-    about: {
-        visionImages: "Vision Section",
-        missionImages: "Mission Section",
-        storyImages: "Our Story Section",
-    },
-    getInvolved: {
-        getInvolvedHeaderImage: "Header Background",
-        communityGallery: "Community Gallery",
-    },
+    about: { visionImages: "Vision Section", missionImages: "Mission Section", storyImages: "Our Story Section" },
+    getInvolved: { getInvolvedHeaderImage: "Header Background", communityGallery: "Community Gallery" },
     impact: { impactHeaderImage: "Header Background" },
     programs: { programHeaderImage: "Header Background" },
     milestones: { "2026": "2026" },
@@ -160,15 +90,7 @@ function prettifyLabel(key: string) {
 
 /* ---- Sub-components ---- */
 
-function PageTab({
-    label,
-    active,
-    onClick,
-}: {
-    label: string;
-    active: boolean;
-    onClick: () => void;
-}) {
+function PageTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
     return (
         <div
             className={`flex gap-2 pl-3 pr-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 whitespace-nowrap cursor-pointer
@@ -183,15 +105,7 @@ function PageTab({
     );
 }
 
-function SectionChip({
-    label,
-    active,
-    onClick,
-}: {
-    label: string;
-    active: boolean;
-    onClick: () => void;
-}) {
+function SectionChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
     return (
         <div
             className={`flex items-center gap-1 pl-3 pr-3 py-1 rounded-full text-xs font-medium border transition-all duration-150 m-0.5 cursor-pointer
@@ -207,13 +121,7 @@ function SectionChip({
 }
 
 /* ---- Delete Confirmation Modal ---- */
-function DeleteModal({
-    onCancel,
-    onConfirm,
-}: {
-    onCancel: () => void;
-    onConfirm: () => void;
-}) {
+function DeleteModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-96 overflow-hidden">
@@ -228,7 +136,6 @@ function DeleteModal({
                         <p className="text-red-200 text-xs mt-0.5">This action cannot be undone</p>
                     </div>
                 </div>
-
                 <div className="px-6 py-5">
                     <p className="text-stone-600 text-sm leading-relaxed mb-3">
                         You are about to <span className="font-semibold text-red-600">permanently delete</span> this image from the database.
@@ -241,32 +148,20 @@ function DeleteModal({
                         ].map((warning) => (
                             <li key={warning} className="flex items-start gap-2 text-xs text-stone-500">
                                 <svg className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="12" y1="8" x2="12" y2="12" />
-                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                                 </svg>
                                 {warning}
                             </li>
                         ))}
                     </ul>
-
                     <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-5">
-                        <p className="text-xs text-red-700 font-medium">
-                            ⚠️ Are you absolutely sure you want to delete this image?
-                        </p>
+                        <p className="text-xs text-red-700 font-medium">⚠️ Are you absolutely sure you want to delete this image?</p>
                     </div>
-
                     <div className="flex gap-3">
-                        <button
-                            onClick={onCancel}
-                            className="flex-1 px-4 py-2.5 rounded-lg bg-stone-100 text-stone-600 text-sm font-semibold hover:bg-stone-200 transition"
-                        >
+                        <button onClick={onCancel} className="flex-1 px-4 py-2.5 rounded-lg bg-stone-100 text-stone-600 text-sm font-semibold hover:bg-stone-200 transition">
                             Cancel, Keep Image
                         </button>
-                        <button
-                            onClick={onConfirm}
-                            className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition shadow-sm shadow-red-200"
-                        >
+                        <button onClick={onConfirm} className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition shadow-sm shadow-red-200">
                             Yes, Delete Forever
                         </button>
                     </div>
@@ -295,27 +190,37 @@ export default function ImagesAdmin({ token }: TokenProp) {
     const availablePages = useMemo(() => Object.keys(pageSections), [pageSections]);
     const availableSections = pageSections[page] ?? [];
 
+    const isElectiveOffices = page === "electiveOffices";
+
     useEffect(() => {
+        if (isElectiveOffices) return; // no sections to set
         if (availableSections.length === 0) { setSection(""); return; }
         if (!availableSections.includes(section)) setSection(availableSections[0]);
     }, [page]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /* ---------------- Fetch Images ---------------- */
     const fetchImages = async () => {
-        if (!section) { setImages([]); return; }
         setImagesLoading(true);
         try {
-            const res = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/section/${section}`);
+            // Elective offices: fetch all by type instead of by section
+            const url = isElectiveOffices
+                ? `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/type/electiveOffices`
+                : `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/section/${section}`;
+            const res = await fetch(url);
             const data = await res.json();
-            setImages(formatImages(data));
+            setImages(formatImages(Array.isArray(data) ? data : []));
         } catch (err) {
             console.error("Failed to fetch images:", err);
+            setImages([]);
         } finally {
             setImagesLoading(false);
         }
     };
 
-    useEffect(() => { fetchImages(); }, [page, section]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (!isElectiveOffices && !section) { setImages([]); return; }
+        fetchImages();
+    }, [page, section]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const formatImages = (data: any[]) =>
         data.map((img) => ({
@@ -325,12 +230,12 @@ export default function ImagesAdmin({ token }: TokenProp) {
 
     /* ---------------- Upload ---------------- */
     const handleUpload = async () => {
-        if (!file || !page || !section) return;
+        if (!file || !page || (!isElectiveOffices && !section)) return;
         setLoading(true);
         const formData = new FormData();
         formData.append("image", file);
         formData.append("type", page);
-        formData.append("section", section);
+        if (!isElectiveOffices) formData.append("section", section);
         try {
             await axios.post(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/upload`, formData, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -376,9 +281,7 @@ export default function ImagesAdmin({ token }: TokenProp) {
 
                 {/* Page type tabs */}
                 <div>
-                    <label className="block text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">
-                        Page Type
-                    </label>
+                    <label className="block text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">Page Type</label>
                     <div className="flex flex-wrap gap-1.5">
                         {availablePages.map((p) => (
                             <PageTab
@@ -393,37 +296,36 @@ export default function ImagesAdmin({ token }: TokenProp) {
 
                 <hr className="border-stone-100" />
 
-                {/* Section chips */}
-                <div>
-                    <label className="block text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">
-                        Section
-                        <span className="ml-2 normal-case tracking-normal font-normal bg-stone-100 text-stone-400 text-xs px-2 py-0.5 rounded-full">
-                            {availableSections.length}
-                        </span>
-                    </label>
-                    <div className="flex flex-wrap">
-                        {availableSections.length ? (
-                            availableSections.map((sec) => (
-                                <SectionChip
-                                    key={sec}
-                                    label={sectionLabels[page]?.[sec] || prettifyLabel(sec)}
-                                    active={sec === section}
-                                    onClick={() => setSection(sec)}
-                                />
-                            ))
-                        ) : (
-                            <span className="text-xs text-stone-400 italic m-0.5">No sections available.</span>
-                        )}
+                {/* Section chips — hidden for elective offices */}
+                {!isElectiveOffices && (
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">
+                            Section
+                            <span className="ml-2 normal-case tracking-normal font-normal bg-stone-100 text-stone-400 text-xs px-2 py-0.5 rounded-full">
+                                {availableSections.length}
+                            </span>
+                        </label>
+                        <div className="flex flex-wrap">
+                            {availableSections.length ? (
+                                availableSections.map((sec) => (
+                                    <SectionChip
+                                        key={sec}
+                                        label={sectionLabels[page]?.[sec] || prettifyLabel(sec)}
+                                        active={sec === section}
+                                        onClick={() => setSection(sec)}
+                                    />
+                                ))
+                            ) : (
+                                <span className="text-xs text-stone-400 italic m-0.5">No sections available.</span>
+                            )}
+                        </div>
+                        <hr className="border-stone-100 mt-5" />
                     </div>
-                </div>
-
-                <hr className="border-stone-100" />
+                )}
 
                 {/* File drop */}
                 <div>
-                    <label className="block text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">
-                        Image File
-                    </label>
+                    <label className="block text-xs font-semibold uppercase tracking-widest text-stone-400 mb-2">Image File</label>
                     <label className="flex items-center justify-center gap-3 border-2 border-dashed border-amber-300 rounded-xl p-5 bg-amber-50 cursor-pointer hover:bg-amber-100 hover:border-amber-500 transition group">
                         <input
                             ref={fileInputRef}
@@ -444,7 +346,7 @@ export default function ImagesAdmin({ token }: TokenProp) {
 
                 <button
                     onClick={handleUpload}
-                    disabled={loading || !file || !page || !section}
+                    disabled={loading || !file || !page || (!isElectiveOffices && !section)}
                     className="self-start px-6 py-2 rounded-lg bg-amber-700 text-white text-sm font-semibold hover:bg-amber-800 disabled:opacity-40 transition shadow-sm"
                 >
                     {loading ? "Uploading…" : "⬆ Upload Image"}
@@ -457,7 +359,7 @@ export default function ImagesAdmin({ token }: TokenProp) {
                     <h3 className="text-base font-semibold text-stone-700 flex items-center gap-2">
                         <span>🖼</span>
                         {pageLabels[page] || prettifyLabel(page)}
-                        {section && (
+                        {!isElectiveOffices && section && (
                             <span className="text-stone-400 font-normal">
                                 / {sectionLabels[page]?.[section] || prettifyLabel(section)}
                             </span>

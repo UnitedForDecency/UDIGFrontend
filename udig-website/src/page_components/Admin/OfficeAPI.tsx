@@ -10,12 +10,12 @@ export interface OfficeType {
 export interface OfficeInfo {
     id: string;
     name: string;
-    // The backend DTO sends officeType as a plain string
     officeType: string;
     state: string;
     certLevel: string;
-    // Map<string,string> serializes to a plain object over JSON
+    imageId: string;
     contactInfo?: Record<string, string>;
+    isCandidate: boolean;
 }
 
 type ApiOfficeType = {
@@ -29,9 +29,11 @@ type ApiOfficeInfo = {
     _id?: string;
     name?: string;
     officeType?: string;
+    imageId?: string;
     state?: string;
     certLevel?: string;
     contactInfo?: Record<string, string> | null;
+    isCandidate?: boolean;
 };
 
 function mapOfficeType(raw: ApiOfficeType): OfficeType | null {
@@ -47,11 +49,12 @@ function mapOfficeInfo(raw: ApiOfficeInfo): OfficeInfo | null {
     return {
         id,
         name: raw.name ?? "",
-        // Backend DTO sends a plain string
         officeType: typeof raw.officeType === "string" ? raw.officeType : "",
+        imageId: raw.imageId ?? "",
         state: raw.state ?? "",
         certLevel: raw.certLevel ?? "",
         contactInfo: raw.contactInfo ?? {},
+        isCandidate: raw.isCandidate ?? false,
     };
 }
 
@@ -72,7 +75,6 @@ export async function createOfficeType(
     const res = await axios.post(`${API_BASE}/officetype`, data, {
         headers: { Authorization: `Bearer ${token}` },
     });
-    // Backend returns the DTO directly
     const mapped = mapOfficeType(res.data as ApiOfficeType);
     return (
         mapped ?? {
@@ -93,9 +95,6 @@ export async function updateOfficeType(
 }
 
 export async function deleteOfficeType(id: string, token: string) {
-    // NOTE: The backend delete route has a bug — it uses req.params.id but
-    // the param is named :officeTypeId. This call will still hit the right
-    // URL; the fix needs to happen server-side.
     return axios.delete(`${API_BASE}/officetype/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
     });
@@ -116,8 +115,10 @@ export async function createOfficeInfo(
         name: string;
         officeType: string;
         state: string;
+        imageId: string;
         certLevel: string;
         contactInfo?: Record<string, string>;
+        isCandidate: boolean;
     },
     token: string
 ): Promise<OfficeInfo> {
@@ -130,9 +131,11 @@ export async function createOfficeInfo(
             id: res.data?.id ?? res.data?._id ?? crypto.randomUUID(),
             name: data.name,
             officeType: data.officeType,
+            imageId: data.imageId,
             state: data.state,
             certLevel: data.certLevel,
             contactInfo: data.contactInfo ?? {},
+            isCandidate: data.isCandidate,
         }
     );
 }
@@ -148,7 +151,6 @@ export async function updateOfficeInfo(
 }
 
 export async function deleteOfficeInfo(id: string, token: string) {
-    // Route is DELETE /office/:officeId — matches correctly
     return axios.delete(`${API_BASE}/officeinfo/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
     });
