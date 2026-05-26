@@ -1,19 +1,4 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-
-type DonationOption = {
-    label: string;
-    href: string;
-    note?: string;
-};
+import { useState, useEffect } from "react";
 
 type Section = {
     id: string;
@@ -21,33 +6,6 @@ type Section = {
     teaser: string;
     content: React.ReactNode;
 };
-
-// This is where you are going to add your links. Get the links from donorbox so you can do this. Get a link based on what the label says.
-
-const DONORBOX_OPTIONS: DonationOption[] = [
-    {
-        //Label is 5$ so go get a link that makes them pay 5$
-        label: "$5",
-        href: "https://donorbox.org/YOUR-CAMPAIGN-LINK",
-    },
-    {
-        label: "$25",
-        href: "https://donorbox.org/YOUR-CAMPAIGN-LINK",
-    },
-    {
-        label: "$50",
-        href: "https://donorbox.org/YOUR-CAMPAIGN-LINK",
-    },
-    {
-        label: "$100",
-        href: "https://donorbox.org/YOUR-CAMPAIGN-LINK",
-    },
-    {
-        label: "Other amount",
-        href: "https://donorbox.org/YOUR-CAMPAIGN-LINK",
-        note: "Open Donorbox",
-    },
-];
 
 const SECTIONS: Section[] = [
     {
@@ -121,14 +79,142 @@ const SECTIONS: Section[] = [
     },
 ];
 
-function DonationButton({ option }: { option: DonationOption }) {
+function launchCelebration() {
+    const existing = document.getElementById("confetti-canvas");
+    if (existing) existing.remove();
+
+    const canvas = document.createElement("canvas");
+    canvas.id = "confetti-canvas";
+    Object.assign(canvas.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        pointerEvents: "none",
+        zIndex: "9999",
+        width: "100vw",
+        height: "100vh",
+    });
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext("2d")!;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    const colors = ["#ff6b6b", "#feca57", "#54a0ff", "#1dd1a1", "#5f27cd"];
+    const confetti = Array.from({ length: 150 }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * -H,
+        r: 4 + Math.random() * 4,
+        d: Math.random() * 150,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        tilt: 0,
+        tiltAngle: 0,
+        tiltAngleIncrement: 0.05 + Math.random() * 0.07,
+    }));
+
+    let frame: number;
+    let elapsed = 0;
+    const duration = 6000;
+    let last = performance.now();
+
+    function draw(now: number) {
+        elapsed += now - last;
+        last = now;
+        ctx.clearRect(0, 0, W, H);
+        confetti.forEach((c) => {
+            ctx.beginPath();
+            ctx.lineWidth = c.r;
+            ctx.strokeStyle = c.color;
+            ctx.moveTo(c.x + c.tilt, c.y);
+            ctx.lineTo(c.x + c.tilt + c.r, c.y + c.tilt);
+            ctx.stroke();
+            c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
+            c.x += Math.sin(c.d);
+            c.tiltAngle += c.tiltAngleIncrement;
+            c.tilt = Math.sin(c.tiltAngle) * 15;
+            if (c.y > H) { c.y = -10; c.x = Math.random() * W; }
+        });
+        if (elapsed < duration) {
+            frame = requestAnimationFrame(draw);
+        } else {
+            cancelAnimationFrame(frame);
+            canvas.remove();
+        }
+    }
+    frame = requestAnimationFrame(draw);
+
+    const balloonColors = ["#ff7675", "#74b9ff", "#55efc4", "#ffeaa7", "#a29bfe"];
+    for (let i = 0; i < 10; i++) {
+        const b = document.createElement("div");
+        const dur = 10 + Math.random() * 10;
+        Object.assign(b.style, {
+            position: "fixed",
+            bottom: "-150px",
+            left: Math.random() * 100 + "%",
+            width: "60px",
+            height: "80px",
+            borderRadius: "50%",
+            backgroundColor: balloonColors[i % balloonColors.length],
+            zIndex: "9998",
+            animation: `floatUp ${dur}s linear forwards`,
+            pointerEvents: "none",
+        });
+        const string = document.createElement("div");
+        Object.assign(string.style, {
+            position: "absolute",
+            bottom: "-20px",
+            left: "50%",
+            width: "2px",
+            height: "20px",
+            background: "#555",
+        });
+        b.appendChild(string);
+        document.body.appendChild(b);
+        setTimeout(() => b.remove(), (dur + 1) * 1000);
+    }
+
+    if (!document.getElementById("balloon-style")) {
+        const style = document.createElement("style");
+        style.id = "balloon-style";
+        style.textContent = `
+            @keyframes floatUp {
+                from { transform: translateY(0); opacity: 1; }
+                to   { transform: translateY(-120vh); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+function ThankYouModal({ onClose }: { onClose: () => void }) {
     return (
-        <Button
-            onClick={() => window.location.assign(option.href)}
-            className="h-14 text-lg font-semibold bg-porcelain border-2 border-yale-blue text-yale-blue hover:bg-alice-blue transition"
+        <div
+            className="fixed inset-0 flex items-center justify-center z-[10000]"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            onClick={onClose}
         >
-            {option.label}
-        </Button>
+            <div
+                className="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full mx-4 text-center space-y-4"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="text-6xl">🎉</div>
+                <h2 className="text-3xl font-bold text-yale-blue">Thank You!</h2>
+                <p className="text-lg text-graphite leading-relaxed">
+                    Your contribution makes a real difference. Together, we are building a louder, stronger collective voice for decency and accountability in government.
+                </p>
+                <p className="text-base font-semibold text-graphite">
+                    We CAN do this — together!
+                </p>
+                <button
+                    onClick={onClose}
+                    className="mt-4 px-8 py-3 rounded-2xl bg-yale-blue text-white text-lg font-semibold hover:bg-yale-blue/90 transition"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
     );
 }
 
@@ -150,13 +236,11 @@ function AccordionCard({
                 {section.title}
                 <span className={`transition-transform duration-300 ${isOpen ? "rotate-180" : "rotate-0"}`}>▼</span>
             </button>
-
             {!isOpen && (
                 <p className="px-6 py-2 text-sm text-graphite italic bg-porcelain">
                     {section.teaser}
                 </p>
             )}
-
             {isOpen && (
                 <div className="px-6 py-6 space-y-6 bg-white">
                     {section.content}
@@ -168,6 +252,35 @@ function AccordionCard({
 
 export default function Contribute() {
     const [openSection, setOpenSection] = useState<string | null>(null);
+    const [showThankYou, setShowThankYou] = useState(false);
+
+    useEffect(() => {
+        function handleMessage(e: MessageEvent) {
+            if (e.origin !== "https://donorbox.org") return;
+            if (
+                typeof e.data === "string"
+                    ? e.data.includes("donated")
+                    : e.data?.event === "donated"
+            ) {
+                launchCelebration();
+                setShowThankYou(true);
+            }
+        }
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
+    }, []);
+
+    // Test: press T to trigger
+    useEffect(() => {
+        function handleKey(e: KeyboardEvent) {
+            if (e.key === "t") {
+                launchCelebration();
+                setShowThankYou(true);
+            }
+        }
+        window.addEventListener("keydown", handleKey);
+        return () => window.removeEventListener("keydown", handleKey);
+    }, []);
 
     const toggleSection = (section: string) => {
         setOpenSection((current) => (current === section ? null : section));
@@ -175,14 +288,16 @@ export default function Contribute() {
 
     return (
         <section className="flex flex-col items-center bg-alice-blue w-full">
+            {showThankYou && <ThankYouModal onClose={() => setShowThankYou(false)} />}
+
             {/* INTRO */}
             <div className="w-full py-20 px-6 flex justify-center">
-                <div className="max-w-4xl text-center space-y-6">
+                <div className="max-w-4xl w-full flex flex-col items-center text-center space-y-6">
                     <h1 className="text-4xl font-bold underline underline-offset-4 decoration-brick-ember">
                         Want to make a difference?
                     </h1>
 
-                    <p className="text-lg leading-relaxed">
+                    <p className="text-lg leading-relaxed max-w-2xl">
                         We are all fed up with abuses of power by government officials of all political stripes, with{" "}
                         <span className="font-bold">
                             partisanship and self-interest taking priority over principle and the public interest.
@@ -190,37 +305,23 @@ export default function Contribute() {
                         Oftentimes it even seems that meanness, spite, and retribution are the sole motivations for much that is done by government officials.
                     </p>
 
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button className="mt-4 rounded-2xl text-lg px-10 py-6 bg-yale-blue hover:bg-yale-blue/90 shadow-xl transition">
-                                CONTRIBUTE
-                            </Button>
-                        </DialogTrigger>
-
-                        <DialogContent className="sm:max-w-md rounded-2xl p-8">
-                            <DialogHeader className="space-y-4 text-center">
-                                <DialogTitle className="text-2xl font-bold">Make a Contribution</DialogTitle>
-                                <DialogDescription asChild>
-                                    <div className="space-y-6">
-                                        <p className="text-base text-graphite">
-                                            Thank you for supporting decency, accountability, and principled leadership.
-                                            Every contribution strengthens our collective voice.
-                                        </p>
-
-                                        <div className="grid grid-cols-2 gap-4 pt-2">
-                                            {DONORBOX_OPTIONS.slice(0, 4).map((option) => (
-                                                <DonationButton key={option.label} option={option} />
-                                            ))}
-                                        </div>
-
-                                        <div className="pt-4">
-                                            <DonationButton option={DONORBOX_OPTIONS[4]} />
-                                        </div>
-                                    </div>
-                                </DialogDescription>
-                            </DialogHeader>
-                        </DialogContent>
-                    </Dialog>
+                    {/* DONORBOX IFRAME */}
+                    <div className="w-full flex justify-center">
+                        <iframe
+                            src="https://donorbox.org/embed/united-for-decency-in-government"
+                            name="donorbox"
+                            allowFullScreen
+                            seamless
+                            frameBorder="0"
+                            scrolling="no"
+                            height="700"
+                            style={{
+                                width: "425px",
+                                minWidth: "250px",
+                                display: "block",
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
