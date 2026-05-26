@@ -270,18 +270,6 @@ export default function Contribute() {
         return () => window.removeEventListener("message", handleMessage);
     }, []);
 
-    // Test: press T to trigger
-    useEffect(() => {
-        function handleKey(e: KeyboardEvent) {
-            if (e.key === "t") {
-                launchCelebration();
-                setShowThankYou(true);
-            }
-        }
-        window.addEventListener("keydown", handleKey);
-        return () => window.removeEventListener("keydown", handleKey);
-    }, []);
-
     const toggleSection = (section: string) => {
         setOpenSection((current) => (current === section ? null : section));
     };
