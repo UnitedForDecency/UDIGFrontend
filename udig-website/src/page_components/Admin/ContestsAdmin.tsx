@@ -1,5 +1,5 @@
 import { type TokenProp, notifyApiError } from "@/App";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios, { AxiosError } from "axios";
 import {
     Select,
@@ -11,18 +11,29 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 type Contest = {
-    _id?: string;
-    description: string;
-    prize: number | null;
+    id: string | null | undefined;
     title: string;
     topic: string;
-    winner: string;
-    startdate: Date | null;
-    enddate: Date | null;
+    description: string;
+    prize: number | null;
+    startDate: Date | null;
+    endDate: Date | null;
+    submissions: string[] | undefined;
+};
+
+type Essay = {
+    readonly id: string;
+    readonly title: string;
+    readonly author: string;
+    readonly content: string;
+    featured: string;
+    readonly createdAt: Date;
+    readonly writtenAt: Date;
 };
 
 type SearchParams = {
@@ -32,20 +43,115 @@ type SearchParams = {
     keyword: string;
 };
 
+const FeaturedSuggestions: readonly string[] = [
+    "1st",
+    "2nd",
+    "3rd",
+    "Featured"
+];
+
+function datePassed(date: Date): boolean {
+    const currentDate = new Date();
+
+    return date < currentDate;
+}
+
+function ensureTwoDigits(num: number): string {
+    return num < 10 ? `0${num.toString()}` : num.toString();
+}
+
+function formatLocalDateTime(date: Date): string {
+    /** `getMonth` is zero-indexed, so we have to convert it to be one-indexed */
+    const month = ensureTwoDigits(date.getMonth() + 1);
+    const day = ensureTwoDigits(date.getDate());
+    const hour = ensureTwoDigits(date.getHours());
+    const minute = ensureTwoDigits(date.getMinutes());
+
+    return `${date.getFullYear()}-${month}-${day}T${hour}:${minute}`;
+}
+
+function formatUTCDate(date: Date): string {
+    /** `getUTCMonth` is zero-indexed, so we have to convert it to be one-indexed */
+    const month = ensureTwoDigits(date.getUTCMonth() + 1);
+    const day = ensureTwoDigits(date.getUTCDate());
+
+    return `${date.getUTCFullYear()}-${month}-${day}`;
+}
+
+/**
+ * You might be wondering "Why is this function needed?"
+ * 
+ * It is needed because dates are serialized to strings
+ * when sent over the network, meaning that we have to
+ * deserialize them back into date objects in order
+ * to use them properly
+ * @param contest A contest received from over the network
+ * @returns The {@link contest} with its date strings converted into date objects
+ */
+function contestConvertStringToDate(contest: any): any {
+    if(contest.startDate !== undefined && typeof contest.startDate === "string") {
+        contest.startDate = new Date(contest.startDate);
+    }
+
+    if(contest.endDate !== undefined && typeof contest.endDate === "string") {
+        contest.endDate = new Date(contest.endDate);
+    }
+
+    return contest;
+}
+
+/**
+ * You might be wondering "Why is this function needed?"
+ * 
+ * It is needed because dates are serialized to strings
+ * when sent over the network, meaning that we have to
+ * deserialize them back into date objects in order
+ * to use them properly
+ * @param essay An essay received from over the network
+ * @returns The {@link essay} with its date strings converted into date objects
+ */
+function essayConvertStringToDate(essay: any): any {
+    if(essay.createdAt !== undefined && typeof essay.createdAt === "string") {
+        essay.createdAt = new Date(essay.createdAt);
+    }
+
+    if(essay.writtenAt !== undefined && typeof essay.writtenAt === "string") {
+        essay.writtenAt = new Date(essay.writtenAt);
+    }
+
+    return essay;
+}
+
 export default function ContestsAdmin({token}: TokenProp) {
+    const controllerUrl: string = import.meta.env.VITE_MONGO_CONTROLLER_URL;
+
     const [contests, setContests] = useState<Contest[]>([]);
     const [newContest, setNewContest] = useState<Contest>({
+        id: null,
         description: "",
         prize: null,
         title: "",
         topic: "",
-        winner: "",
-        startdate: null,
-        enddate: null
+        startDate: null,
+        endDate: null,
+        submissions: undefined
     });
+
+    const [submissions, setSubmissions] = useState<Essay[]>([]);
+    const submissionsContestId = useRef<string>(null);
+    const [submissionsVisible, setSubmissionsVisible] = useState(false);
+    const [displayedSubmission, setDisplayedSubmission] = useState<Essay | null>(null);
+    const originalFeaturedValue = useRef<string>(null);
+
+    const featuredSuggestionsPopoverRef = useRef<HTMLDivElement>(null);
+    const [featuredSuggestionsPopoverOpen, setFeaturedSuggestionsPopoverOpen] = useState(false);
+
     const [loading, setLoading] = useState(false);
-    const [editingContestId, setEditingContestId] = useState<string | null | undefined>(null);
-    const [pageNumber, setPageNumber] = useState(0);
+
+    const contestsPerPage = 6;
+    const submissionsPerPage = 6;
+    const [contestsPageNumber, setContestsPageNumber] = useState(0);
+    const [submissionsPageNumber, setSubmissionsPageNumber] = useState(0);
 
     const [searchParams, setSearchParams] = useState<SearchParams>({
         title: "",
@@ -54,49 +160,18 @@ export default function ContestsAdmin({token}: TokenProp) {
         keyword: ""
     });
 
-    const contestsPerPage = 6;
-
     const authHeaders = {
         headers: {Authorization: `Bearer ${token}`}
     };
 
-    const contestIsOngoing = (startdate: Date, enddate: Date) => {
-        const currentDate = new Date();
-
-        return (startdate <= currentDate) && (enddate > currentDate);
-    };
-
-    const formatLocalDateTime = (date: Date) => {
-        const ensureTwoDigits = (num: number) => {
-            return num < 10 ? `0${num}` : num.toString();
-        };
-
-        const month = ensureTwoDigits(date.getMonth() + 1);
-        const day = ensureTwoDigits(date.getDate());
-        const hour = ensureTwoDigits(date.getHours());
-        const minute = ensureTwoDigits(date.getMinutes());
-
-        return `${date.getFullYear()}-${month}-${day}T${hour}:${minute}`;
-    };
-
-    const fetchContests = async () => {
+    const fetchContests = async (): Promise<void> => {
         try {
-            axios.get(
-                `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/essaycontest/contests`,
+            return axios.get<Contest[]>(
+                `${controllerUrl}/contests`,
                 authHeaders
             ).then(res => {
-                if(res.data.contests != undefined) {
-                    for(let contest of res.data.contests) {
-                        contest.startdate = new Date(contest.startdate);
-                        contest.enddate = new Date(contest.enddate);
-                    }
-
-                    setContests(res.data.contests);
-                } else {
-                    setContests([]);
-                }
-            }).catch((err: AxiosError) => {
-                if(err.response && err.response.status === 404) return;
+                setContests(res.data.map(c => contestConvertStringToDate(c)));
+            }, (err: AxiosError) => {
                 notifyApiError(err, "fetch contests");
             });
         } catch(err: any) {
@@ -109,45 +184,43 @@ export default function ContestsAdmin({token}: TokenProp) {
         fetchContests();
     }, [token]);
 
-    const resetNewContest = () => {
+    const resetNewContest = (): void => {
         setNewContest({
+            id: null,
             description: "",
             prize: null,
             title: "",
             topic: "",
-            winner: "",
-            startdate: null,
-            enddate: null
+            startDate: null,
+            endDate: null,
+            submissions: undefined
         });
-        setEditingContestId(null);
     };
 
-    const beginCreatingContest = () => {
+    const beginCreatingContest = (): void => {
         resetNewContest();
-        setEditingContestId(undefined);
+        setNewContest({...newContest, id: undefined});
     };
 
-    const addContest = async () => {
+    const addContest = async (): Promise<void> => {
         try {
             setLoading(true);
 
-            axios.post(
-                `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/essaycontest/contests`,
+            axios.post<Contest>(
+                `${controllerUrl}/contests`,
                 {
-                    description: newContest.description,
-                    prize: newContest.prize!,
                     title: newContest.title,
                     topic: newContest.topic,
-                    winner: newContest.winner,
-                    startdate: newContest.startdate!,
-                    enddate: newContest.enddate!
+                    description: newContest.description,
+                    prize: newContest.prize!,
+                    startDate: newContest.startDate!,
+                    endDate: newContest.endDate!
                 },
                 authHeaders
             ).then(res => {
-                setContests(prev => [...prev, {_id: res.data.contestId, ...newContest}]);
+                setContests(prev => [...prev, contestConvertStringToDate(res.data)]);
                 resetNewContest();
-                fetchContests();
-            }).catch((err: AxiosError) => {
+            }, (err: AxiosError) => {
                 notifyApiError(err, "add contest");
             });
         } catch(err: any) {
@@ -158,27 +231,27 @@ export default function ContestsAdmin({token}: TokenProp) {
         }
     };
 
-    const beginEditingContest = async (id?: string) => {
-        if(!id) return;
-        if((editingContestId !== null) && !window.confirm("Any changes will be lost!")) return;
+    const beginEditingContest = async (id: string): Promise<void> => {
+        if(newContest.id !== null && !window.confirm("Any changes will be lost!")) return;
 
         try {
             axios.get(
-                `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/essaycontest/contests/${id}`, authHeaders
+                `${controllerUrl}/contests/${id}`,
+                authHeaders
             ).then(res => {
                 const selectedContest: Contest = {
-                    description: res.data.description,
-                    prize: Number(res.data.prize),
+                    id: id,
                     title: res.data.title,
                     topic: res.data.topic,
-                    winner: res.data.winner,
-                    startdate: new Date(res.data.startdate),
-                    enddate: new Date(res.data.enddate)
+                    description: res.data.description,
+                    prize: res.data.prize,
+                    startDate: new Date(res.data.startDate),
+                    endDate: new Date(res.data.endDate),
+                    submissions: res.data.submissions
                 };
 
                 setNewContest(selectedContest);
-                setEditingContestId(id);
-            }).catch((err: AxiosError) => {
+            }, (err: AxiosError) => {
                 notifyApiError(err, "get contest");
             });
         } catch(err: any) {
@@ -187,23 +260,23 @@ export default function ContestsAdmin({token}: TokenProp) {
         }
     };
 
-    const cancelContestEdit = () => {
+    const cancelContestEdit = (): void => {
         if(!window.confirm("Cancel editing? Any changes will be lost!")) return;
         resetNewContest();
     };
 
-    const saveContestEdit = async () => {
-        if(editingContestId === null || editingContestId === undefined) return;
+    const saveContestEdit = async (): Promise<void> => {
+        if(newContest.id === null || newContest.id === undefined) return;
 
         try {
-            axios.put(
-                `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/essaycontest/contests/${editingContestId}`,
+            return axios.put<Contest>(
+                `${controllerUrl}/contests/${newContest.id}`,
                 newContest,
                 authHeaders
             ).then(res => {
-                setContests((prev) => prev.map((e) => e._id === editingContestId ? res.data.contest : e));
+                setContests(prev => prev.map(c => c.id === newContest.id ? contestConvertStringToDate(res.data) : c));
                 resetNewContest();
-            }).catch((err: AxiosError) => {
+            }, (err: AxiosError) => {
                 notifyApiError(err, "save contest");
             });
         } catch(err: any) {
@@ -212,55 +285,52 @@ export default function ContestsAdmin({token}: TokenProp) {
         }
     };
 
-    const deleteContest = async (id?: string) => {
-        if(!id) return;
+    const deleteContest = async (id: string): Promise<void> => {
         if(!window.confirm("Delete this essay contest permanently?\nThis will also delete all submissions for this contest!")) return;
 
-        // TODO: Need to ensure that all submissions linked to a contest get deleted along side it
-    };
-
-    const searchContests = async () => {
-        if(searchParams.title === "" && searchParams.topic === "" && searchParams.ongoing === null && searchParams.keyword === "") {
-            fetchContests();
-            return;
-        }
-
-        const titleParam = searchParams.title === "" ? "NULL" : searchParams.title;
-        const topicParam = searchParams.topic === "" ? "NULL" : searchParams.topic;
-        const ongoingParam = searchParams.ongoing === null ? "NULL" : String(searchParams.ongoing);
-        const keywordParam = searchParams.keyword === "" ? "NULL" : searchParams.keyword;
-
         try {
-            axios.get(
-                `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/essaycontest/contests/filtered/${titleParam}/${topicParam}/${ongoingParam}/${keywordParam}`
-            ).then(res => {
-                if(res.data.contests != undefined) {
-                    for(let contest of res.data.contests) {
-                        contest.startdate = new Date(contest.startdate);
-                        contest.enddate = new Date(contest.enddate);
-                    }
-
-                    setContests(res.data.contests);
-                } else {
-                    setContests([]);
-                }
-            }).catch((err: AxiosError) => {
-                if(err.response) {
-                    if(err.response.status === 404) {
-                        setContests([]);
-                        return;
-                    }
-                    notifyApiError(err, "search contests");
-                }
+            axios.delete(
+                `${controllerUrl}/contests/${id}`,
+                authHeaders
+            ).then(() => {
+                setContests(prev => prev.filter(c => c.id !== id));
+            }, (err: AxiosError) => {
+                notifyApiError(err, "delete contest");
             });
         } catch(err: any) {
             console.error(err);
             alert(`An unexpected error occured: ${err}`);
-            setContests([]);
         }
     };
 
-    const clearSearchFilter = async () => {
+    const searchContests = async (): Promise<void> => {
+        if(searchParams.title === "" && searchParams.topic === "" && searchParams.ongoing === null && searchParams.keyword === "") {
+            return fetchContests();
+        }
+
+        const params: any = {};
+
+        if(searchParams.title !== "") params.title = searchParams.title;
+        if(searchParams.topic !== "") params.topic = searchParams.topic;
+        if(searchParams.ongoing !== null) params.status = String(searchParams.ongoing);
+        if(searchParams.keyword !== "") params.keyword = searchParams.keyword;
+
+        try {
+            return axios.get<Contest[]>(
+                `${controllerUrl}/contests/filter`,
+                {...authHeaders, params: params}
+            ).then(res => {
+                setContests(res.data.map(c => contestConvertStringToDate(c)));
+            }, (err: AxiosError) => {
+                notifyApiError(err, "search contests");
+            });
+        } catch(err: any) {
+            console.error(err);
+            alert(`An unexpected error occured: ${err}`);
+        }
+    };
+
+    const clearSearchFilter = async (): Promise<void> => {
         setSearchParams({
             title: "",
             topic: "",
@@ -268,6 +338,100 @@ export default function ContestsAdmin({token}: TokenProp) {
             keyword: ""
         });
         fetchContests();
+    };
+
+    const fetchSubmissions = async (id: string): Promise<void> => {
+        try {
+            return axios.get<Essay[]>(
+                `${controllerUrl}/contests/${id}/submissions`,
+                authHeaders
+            ).then(res => {
+                setSubmissions(res.data.map(e => essayConvertStringToDate(e)));
+                setSubmissionsVisible(true);
+                submissionsContestId.current = id;
+            }, (err: AxiosError) => {
+                if(err.response !== undefined && err.response.status === 404) {
+                    setSubmissions([]);
+                    setSubmissionsVisible(true);
+                    submissionsContestId.current = id;
+                    return;
+                }
+
+                notifyApiError(err, "fetch submissions");
+            });
+        } catch(err: any) {
+            console.error(err);
+            alert(`An unexpected error occured: ${err}`);
+        }
+    };
+
+    const displaySubmissions = async (id: string): Promise<void> => {
+        if(!submissionsVisible || hideSubmissions()) {
+            return fetchSubmissions(id);
+        }
+    };
+
+    const displaySubmission = (id: string): void => {
+        if(!submissionsVisible) return;
+
+        const submission: Essay | undefined = submissions.find(s => {return s.id === id});
+
+        // Theoretically, this should never be possible to trigger,
+        // but we check just in case
+        if(submission === undefined) {
+            console.error(`Bad submission id: ${id}`);
+            alert(`Bad submission id: ${id}`);
+            return;
+        }
+
+        originalFeaturedValue.current = submission.featured;
+        setDisplayedSubmission(submission);
+    };
+
+    const updateSubmissionFeatured = async (): Promise<void> => {
+        if(displayedSubmission === null || !submissionsVisible) return;
+
+        try {
+            return axios.put<Essay>(
+                `${controllerUrl}/essays/${displayedSubmission.id}`,
+                {featured: displayedSubmission.featured},
+                authHeaders
+            ).then(res => {
+                setSubmissions(prev => prev.map(e => e.id === displayedSubmission.id ? essayConvertStringToDate(res.data) : e));
+                setDisplayedSubmission(null);
+            }, (err: AxiosError) => {
+                notifyApiError(err, "save submission");
+            });
+        } catch(err: any) {
+            console.error(err);
+            alert(`An unexpected error occured: ${err}`);
+        }
+    };
+
+    const hideDisplayedSubmission = (): boolean => {
+        if(displayedSubmission === null) return true;
+
+        if(
+            originalFeaturedValue.current !== displayedSubmission.featured &&
+            !window.confirm("\"Featured\" field has unsaved changes. Hiding the submission will lose those changes. Are you sure you want to continue?")
+        ) {
+            return false;
+        }
+
+        setDisplayedSubmission(null);
+
+        return true;
+    };
+
+    const hideSubmissions = (): boolean => {
+        if(displayedSubmission === null || hideDisplayedSubmission()) {
+            setSubmissionsVisible(false);
+            setSubmissions([]);
+            submissionsContestId.current = null;
+            return true;
+        }
+
+        return false;
     };
 
     return (
@@ -278,15 +442,15 @@ export default function ContestsAdmin({token}: TokenProp) {
             {/* Contest Search */}
             <Card className="mb-6">
                 <CardContent>
-                    <div className="flex justify-center gap-2">
+                    <div className="flex flex-wrap justify-center gap-2">
                         <Input
-                            className="p-2 rounded flex-1"
+                            className="p-2 rounded min-w-30 flex-1"
                             placeholder="Title"
                             value={searchParams.title}
                             onChange={e => setSearchParams({...searchParams, title: e.target.value})}
                         />
                         <Input
-                            className="p-2 rounded flex-1"
+                            className="p-2 rounded min-w-30 flex-1"
                             placeholder="Topic"
                             value={searchParams.topic}
                             onChange={e => setSearchParams({...searchParams, topic: e.target.value})}
@@ -295,7 +459,7 @@ export default function ContestsAdmin({token}: TokenProp) {
                             value={searchParams.ongoing === null ? "" : String(searchParams.ongoing)}
                             onValueChange={value => setSearchParams({...searchParams, ongoing: value === "true"})}
                         >
-                            <SelectTrigger className="w-full max-w-30">
+                            <SelectTrigger className="min-w-26 max-w-30 flex-1">
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent position="popper">
@@ -311,7 +475,7 @@ export default function ContestsAdmin({token}: TokenProp) {
                             </SelectContent>
                         </Select>
                         <Input
-                            className="p-2 rounded flex-1"
+                            className="p-2 rounded min-w-30 flex-1"
                             placeholder="Keyword"
                             value={searchParams.keyword}
                             onChange={e => setSearchParams({...searchParams, keyword: e.target.value})}
@@ -335,10 +499,12 @@ export default function ContestsAdmin({token}: TokenProp) {
             </Card>
 
             {/* Contest List */}
-            <Card className="mb-15">
+            <Card
+                className={submissionsVisible ? "mb-4" : "mb-15"}
+            >
                 <CardHeader>
                     {contests.length !== 0 ? (
-                        <CardTitle className="text-xl">Showing page {pageNumber + 1} of {Math.ceil(contests.length / contestsPerPage)}</CardTitle>
+                        <CardTitle className="text-xl">Showing page {contestsPageNumber + 1} of {Math.ceil(contests.length / contestsPerPage)}</CardTitle>
                     ) : (
                         <CardTitle className="text-gray-400 text-xl font-normal mt-4">No contests found.</CardTitle>
                     )}
@@ -346,10 +512,10 @@ export default function ContestsAdmin({token}: TokenProp) {
                 <CardContent>
                     {contests.length !== 0 && (
                         <div className="flex flex-wrap justify-center mb-3">
-                            {contests.slice(pageNumber * contestsPerPage, ((pageNumber + 1) * contestsPerPage)).map((contest) => (
+                            {contests.slice(contestsPageNumber * contestsPerPage, ((contestsPageNumber + 1) * contestsPerPage)).map((contest) => (
                                 <div
-                                    key={contest._id}
-                                    className="w-[20rem] h-[10rem] border border-gray-200 rounded-lg p-[1.5rem] m-[0.8rem] bg-white hover:shadow-md transition-shadow"
+                                    key={contest.id}
+                                    className="w-[20rem] min-h-[16rem] border border-gray-200 rounded-lg p-[1.5rem] m-[0.8rem] bg-white hover:shadow-md transition-shadow"
                                 >
                                     <div className="flex flex-col justify-center gap-4">
                                         <div className="flex-1 min-w-0">
@@ -357,21 +523,38 @@ export default function ContestsAdmin({token}: TokenProp) {
                                                 {contest.title}
                                             </h3>
                                             <p className="text-gray-500">
-                                                {contest.topic} - {contestIsOngoing(contest.startdate!, contest.enddate!) ? "Ends" : "Ended"} {contest.enddate!.toLocaleDateString()}
+                                                {contest.topic}
+                                            </p>
+                                            <p className="text-gray-500">
+                                                {datePassed(contest.startDate!) ? "Started" : "Starts"}: {contest.startDate!.toLocaleString()}
+                                            </p>
+                                            <p className="text-gray-500">
+                                                {datePassed(contest.endDate!) ? "Ended" : "Ends"}: {contest.endDate!.toLocaleString()}
                                             </p>
                                         </div>
                                         <div className="flex gap-2 flex-shrink-0 justify-center">
                                             <button
-                                                onClick={() => beginEditingContest(contest._id)}
-                                                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+                                                onClick={() => beginEditingContest(contest.id!)}
+                                                disabled={submissionsVisible}
+                                                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                                             >
                                                 Edit
                                             </button>
                                             <button
-                                                onClick={() => deleteContest(contest._id)}
-                                                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-medium"
+                                                onClick={() => deleteContest(contest.id!)}
+                                                disabled={submissionsContestId.current === contest.id}
+                                                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                                             >
                                                 Delete
+                                            </button>
+                                        </div>
+                                        <div className="flex flex-shrink-0 justify-center">
+                                            <button
+                                                onClick={() => displaySubmissions(contest.id!)}
+                                                disabled={newContest.id !== null || submissionsContestId.current === contest.id}
+                                                className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                                            >
+                                                View Submissions
                                             </button>
                                         </div>
                                     </div>
@@ -382,8 +565,8 @@ export default function ContestsAdmin({token}: TokenProp) {
                     <div className="flex justify-center gap-2 pb-3 mt-3">
                         {/* Previous Page */}
                         <button
-                            onClick={() => setPageNumber(pageNumber - 1)}
-                            disabled={pageNumber <= 0}
+                            onClick={() => setContestsPageNumber(contestsPageNumber - 1)}
+                            disabled={contestsPageNumber <= 0}
                             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                         >
                             Previous Page
@@ -391,15 +574,15 @@ export default function ContestsAdmin({token}: TokenProp) {
                         {/* Add New Contest */}
                         <button
                             onClick={beginCreatingContest}
-                            disabled={loading || (editingContestId !== null)}
+                            disabled={loading || newContest.id !== null || submissionsVisible}
                             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                         >
                             Add New Contest
                         </button>
                         {/* Next Page */}
                         <button
-                            onClick={() => setPageNumber(pageNumber + 1)}
-                            disabled={((pageNumber + 1) * contestsPerPage) > contests.length}
+                            onClick={() => setContestsPageNumber(contestsPageNumber + 1)}
+                            disabled={((contestsPageNumber + 1) * contestsPerPage) >= contests.length}
                             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                         >
                             Next Page
@@ -409,29 +592,29 @@ export default function ContestsAdmin({token}: TokenProp) {
             </Card>
 
             {/* Add/Edit Contest */}
-            {(editingContestId !== null) && (
+            {(newContest.id !== null && !submissionsVisible) && (
                 <Card className="mb-8">
                     <CardHeader>
-                        <CardTitle className="text-xl">{editingContestId === undefined ? "Create Contest" : "Edit Contest"}</CardTitle>
+                        <CardTitle className="text-xl">{newContest.id === undefined ? "Create Contest" : "Edit Contest"}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
                             <div className="flex flex-wrap gap-2">
                                 <Input
-                                    className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                    className="min-w-30 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
                                     placeholder="Title"
                                     value={newContest.title}
                                     onChange={e => setNewContest({...newContest, title: e.target.value})}
                                 />
                                 <Input
-                                    className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                    className="min-w-30 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
                                     placeholder="Topic"
                                     value={newContest.topic}
                                     onChange={e => setNewContest({...newContest, topic: e.target.value})}
                                 />
                                 <Input
                                     type="number"
-                                    className="border border-gray-300 rounded-md px-3 py-2 min-w-24 max-w-30 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="min-w-24 max-w-30 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Prize"
                                     value={newContest.prize ?? ""}
                                     onChange={e =>
@@ -441,40 +624,38 @@ export default function ContestsAdmin({token}: TokenProp) {
                                         })
                                     }
                                 />
-                            </div>
-                            <div className="flex flex-wrap gap-2">
                                 <label className="flex items-center">
                                     Start Date:
-                                </label>
-                                <Input
-                                    type="datetime-local"
-                                    className="border border-gray-300 rounded-md px-3 py-2 min-w-55 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
-                                    value={newContest.startdate === null ? "" : formatLocalDateTime(newContest.startdate)}
-                                    onChange={e => {
-                                        const date: Date = new Date(e.target.value);
+                                    <Input
+                                        type="datetime-local"
+                                        className="min-w-55 border border-gray-300 rounded-md px-3 py-2 ml-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                        value={newContest.startDate === null ? "" : formatLocalDateTime(newContest.startDate)}
+                                        onChange={e => {
+                                            const date: Date = new Date(e.target.value);
 
-                                        setNewContest({
-                                            ...newContest,
-                                            startdate: isNaN(date.valueOf()) ? null : date
-                                        });
-                                    }}
-                                />
+                                            setNewContest({
+                                                ...newContest,
+                                                startDate: isNaN(date.valueOf()) ? null : date
+                                            });
+                                        }}
+                                    />
+                                </label>
                                 <label className="flex items-center">
                                     End Date:
-                                </label>
-                                <Input
-                                    type="datetime-local"
-                                    className="border border-gray-300 rounded-md px-3 py-2 min-w-55 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
-                                    value={newContest.enddate === null ? "" : formatLocalDateTime(newContest.enddate)}
-                                    onChange={e => {
-                                        const date: Date = new Date(e.target.value);
+                                    <Input
+                                        type="datetime-local"
+                                        className="min-w-55 border border-gray-300 rounded-md px-3 py-2 ml-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                        value={newContest.endDate === null ? "" : formatLocalDateTime(newContest.endDate)}
+                                        onChange={e => {
+                                            const date: Date = new Date(e.target.value);
 
-                                        setNewContest({
-                                            ...newContest,
-                                            enddate: isNaN(date.valueOf()) ? null : date
-                                        });
-                                    }}
-                                />
+                                            setNewContest({
+                                                ...newContest,
+                                                endDate: isNaN(date.valueOf()) ? null : date
+                                            });
+                                        }}
+                                    />
+                                </label>
                             </div>
                             <div className="flex flex-wrap">
                                 <Textarea
@@ -484,11 +665,12 @@ export default function ContestsAdmin({token}: TokenProp) {
                                     onChange={e => setNewContest({...newContest, description: e.target.value})}
                                 />
                             </div>
-                            {editingContestId === undefined ? (
+                            {newContest.id === undefined ? (
                                 <button
                                     onClick={addContest}
                                     disabled={
-                                        loading
+                                        loading || newContest.title === "" || newContest.topic === "" || newContest.prize === null ||
+                                        newContest.description.length < 32 || newContest.startDate === null || newContest.endDate === null
                                     }
                                     className="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-lg"
                                 >
@@ -508,7 +690,8 @@ export default function ContestsAdmin({token}: TokenProp) {
                                 <button
                                     onClick={saveContestEdit}
                                     disabled={
-                                        loading
+                                        loading || newContest.title === "" || newContest.topic === "" || newContest.prize === null ||
+                                        newContest.description.length < 32 || newContest.startDate === null || newContest.endDate === null
                                     }
                                     className="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-lg"
                                 >
@@ -535,6 +718,272 @@ export default function ContestsAdmin({token}: TokenProp) {
                         </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Submissions Content */}
+            {submissionsVisible && (
+                <div>
+                    {/* Header */}
+                    <h3 className="text-3xl font-bold text-gray-900 pb-5">Contest Submissions</h3>
+
+                    {/* Submissions List */}
+                    <Card className="mb-15">
+                        <CardHeader>
+                            {submissions.length !== 0 ? (
+                                <CardTitle className="text-xl">Showing page {submissionsPageNumber + 1} of {Math.ceil(submissions.length / submissionsPerPage)}</CardTitle>
+                            ) : (
+                                <CardTitle className="text-gray-400 text-xl font-normal mt-4">No submissions found.</CardTitle>
+                            )}
+                        </CardHeader>
+                        <CardContent>
+                            {submissions.length !== 0 && (
+                                <div className="flex flex-wrap justify-center mb-3">
+                                    {submissions.slice(submissionsPageNumber * submissionsPerPage, ((submissionsPageNumber + 1) * submissionsPerPage)).map((submission) => (
+                                        <div
+                                            key={submission.id}
+                                            className="w-[20rem] min-h-[13rem] border border-gray-200 rounded-lg p-[1.5rem] m-[0.8rem] bg-white hover:shadow-md transition-shadow"
+                                        >
+                                            <div className="flex flex-col justify-center gap-4">
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                                                        {submission.title}
+                                                    </h3>
+                                                    <p className="text-gray-500">
+                                                        {submission.author}
+                                                    </p>
+                                                    <p className="text-gray-500">
+                                                        Written: {submission.writtenAt.toLocaleDateString(undefined, {timeZone: "UTC"})}
+                                                    </p>
+                                                    <p className="text-gray-500">
+                                                        Submitted: {submission.createdAt.toLocaleDateString()}
+                                                    </p>
+                                                </div>
+                                                <div className="flex gap-2 flex-shrink-0 justify-center">
+                                                    <button
+                                                        onClick={() => displaySubmission(submission.id)}
+                                                        className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition-colors text-sm font-medium"
+                                                    >
+                                                        View
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex justify-center gap-2 pb-3 mt-3">
+                                {/* Previous Page */}
+                                <button
+                                    onClick={() => setSubmissionsPageNumber(submissionsPageNumber - 1)}
+                                    disabled={submissionsPageNumber <= 0}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Previous Page
+                                </button>
+                                {/* Hide Submissions */}
+                                <button
+                                    onClick={hideSubmissions}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Hide Submissions
+                                </button>
+                                {/* Next Page */}
+                                <button
+                                    onClick={() => setSubmissionsPageNumber(submissionsPageNumber + 1)}
+                                    disabled={((submissionsPageNumber + 1) * submissionsPerPage) >= submissions.length}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Next Page
+                                </button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* View Submission */}
+                    {displayedSubmission !== null && (
+                        <Card className="mb-8">
+                            <CardHeader>
+                                <CardTitle className="text-xl">View Submission</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex flex-wrap gap-2">
+                                        <Input
+                                            className="min-w-30 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                            placeholder="Title"
+                                            readOnly={true}
+                                            value={displayedSubmission.title}
+                                        />
+                                        <Input
+                                            className="min-w-30 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                            placeholder="Author"
+                                            readOnly={true}
+                                            value={displayedSubmission.author}
+                                        />
+                                        <Label className="text-base select-text">
+                                            Written On:
+                                            <Input
+                                                type="date"
+                                                className="flex-1 border border-gray-300 rounded-md px-3 py-2 min-w-29 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                readOnly={true}
+                                                value={formatUTCDate(displayedSubmission.writtenAt)}
+                                            />
+                                        </Label>
+                                        <div className="flex flex-1" style={{anchorName: "--contests-admin-featured-suggestions-anchor"}}>
+                                            <div className="min-w-30 flex flex-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <Input
+                                                    className="border-0 px-3 py-2"
+                                                    placeholder="Featured"
+                                                    value={displayedSubmission.featured}
+                                                    onChange={e => setDisplayedSubmission({...displayedSubmission, featured: e.target.value})}
+                                                />
+                                                <button
+                                                    className="p-2 cursor-pointer"
+                                                    popoverTarget="contests-admin-featured-suggestions-popover"
+                                                >
+                                                    {/*
+                                                        The following SVG tag uses data from "https://www.iconpacks.net/"
+
+                                                        Specifically, the data is from the following two SVGs, with links provided:
+                                                            "Up Chevron Black": "https://www.iconpacks.net/free-icon/up-chevron-black-16113.html"
+                                                            "Down Chevron Black": "https://www.iconpacks.net/free-icon/down-chevron-black-16112.html"
+
+                                                        The data used is subject to the terms & conditions listed at "https://www.iconpacks.net/terms/"
+                                                    */}
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        xmlnsXlink="http://www.w3.org/1999/xlink"
+                                                        version="1.1"
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 256 256"
+                                                        xmlSpace="preserve"
+                                                    >
+                                                        <g
+                                                            style={{
+                                                                stroke: "none",
+                                                                strokeWidth: 0,
+                                                                strokeDasharray: "none",
+                                                                strokeLinecap: "butt",
+                                                                strokeLinejoin: "miter",
+                                                                strokeMiterlimit: 10,
+                                                                fill: "none",
+                                                                fillRule: "nonzero",
+                                                                opacity: 1
+                                                            }}
+                                                            transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)"
+                                                        >
+                                                            <path
+                                                                d={featuredSuggestionsPopoverOpen ? (
+                                                                    // Up arrow data
+                                                                    "M 89.028 68.045 l -4.264 3.93 c -1.225 1.129 -3.132 1.051 -4.261 -0.174 l -34.473 -37.4 c -0.555 -0.602 -1.505 -0.602 -2.06 0 l -34.473 37.4 c -1.129 1.225 -3.037 1.302 -4.261 0.174 l -4.263 -3.93 c -1.225 -1.129 -1.302 -3.037 -0.174 -4.261 l 42.04 -45.609 c 1.164 -1.263 3.159 -1.263 4.323 0 l 42.04 45.609 C 90.331 65.008 90.253 66.916 89.028 68.045 z"
+                                                                ) : (
+                                                                    // Down arrow data
+                                                                    "M 89.028 21.955 l -4.264 -3.93 c -1.225 -1.129 -3.132 -1.051 -4.261 0.174 l -34.473 37.4 c -0.555 0.602 -1.505 0.602 -2.06 0 l -34.473 -37.4 c -1.129 -1.225 -3.037 -1.302 -4.261 -0.174 l -4.263 3.93 c -1.225 1.129 -1.302 3.037 -0.174 4.261 l 42.04 45.609 c 1.164 1.263 3.159 1.263 4.323 0 l 42.04 -45.609 C 90.331 24.992 90.253 23.084 89.028 21.955 z"
+                                                                )}
+                                                                style={{
+                                                                    stroke: "none",
+                                                                    strokeWidth: 1,
+                                                                    strokeDasharray: "none",
+                                                                    strokeLinecap: "butt",
+                                                                    strokeLinejoin: "miter",
+                                                                    strokeMiterlimit: 10,
+                                                                    fill: "rgb(0, 0, 0)",
+                                                                    fillRule: "nonzero",
+                                                                    opacity: 1
+                                                                }}
+                                                                transform=" matrix(1 0 0 1 0 0) "
+                                                                strokeLinecap="round"
+                                                            />
+                                                        </g>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                            <div
+                                                id="contests-admin-featured-suggestions-popover"
+                                                ref={featuredSuggestionsPopoverRef}
+                                                popover="auto"
+                                                className="absolute bg-card text-card-foreground rounded-xl border shadow-sm"
+                                                style={{
+                                                    positionAnchor: "--contests-admin-featured-suggestions-anchor",
+                                                    top: "anchor(bottom)",
+                                                    left: "anchor(left)"
+                                                }}
+                                                onToggle={e => {setFeaturedSuggestionsPopoverOpen(e.newState === "open")}}
+                                            >
+                                                <ul className="text-body font-medium">
+                                                    {FeaturedSuggestions.map((value: string, index: number) => (
+                                                        <li className="flex" key={value}>
+                                                            <button
+                                                                className={
+                                                                    `hover:bg-gray-200 hover:text-heading cursor-pointer flex-1 rounded-xl pl-3 pr-3 ${
+                                                                        index === 0 ? (
+                                                                            "pt-1 pb-0.5"
+                                                                        ) : index === (FeaturedSuggestions.length - 1) ? (
+                                                                            "pt-0.5 pb-1"
+                                                                        ) : (
+                                                                            "pt-0.5 pb-0.5"
+                                                                        )
+                                                                    }`
+                                                                }
+                                                                onClick={() => {
+                                                                    if(
+                                                                        displayedSubmission.featured !== ""
+                                                                        && !FeaturedSuggestions.includes(displayedSubmission.featured)
+                                                                        && !window.confirm("Selecting a suggestion will overwrite anything currently in the \"Featured\" field. Continue?")
+                                                                    ) {
+                                                                        return;
+                                                                    }
+
+                                                                    setDisplayedSubmission({...displayedSubmission, featured: value});
+                                                                    featuredSuggestionsPopoverRef.current!.hidePopover();
+                                                                }}
+                                                            >
+                                                                {value}
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap">
+                                        <Textarea
+                                            className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                                            placeholder="Contents"
+                                            readOnly={true}
+                                            value={displayedSubmission.content}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={updateSubmissionFeatured}
+                                        disabled={loading}
+                                        className="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-lg"
+                                    >
+                                        {loading ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                </svg>
+                                                Saving...
+                                            </span>
+                                        ) : (
+                                            "Save Submission"
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={hideDisplayedSubmission}
+                                        disabled={loading}
+                                        className="w-full bg-emerald-600 text-white px-6 py-3 rounded-md hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-lg"
+                                    >
+                                        Hide
+                                    </button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             )}
         </div>
     );
