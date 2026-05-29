@@ -51,7 +51,7 @@ export default function Contact() {
                     </div>
 
                     {/* SOCIAL */}
-                    <div>
+                    {/* <div>
                         <p className="mb-4 text-xs uppercase tracking-widest text-gray-400">
                             Follow us
                         </p>
@@ -70,7 +70,7 @@ export default function Contact() {
                                 <SocialIcon url="https://tiktok.com" bgColor="#0f0f0e" fgColor="#ffffff" />
                             </div>
                         </div>
-                    </div>
+                    </div> */}
 
                 </div>
             </div>

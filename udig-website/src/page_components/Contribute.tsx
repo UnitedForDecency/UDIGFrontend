@@ -11,7 +11,7 @@ const SECTIONS: Section[] = [
     {
         id: "help",
         title: "Please help UDIG",
-        teaser: "Learn how you can expose indecency and organize for real change.",
+        teaser: "How your contribution will help UDIG achieve its goal.",
         content: (
             <>
                 <ul className="list-disc list-inside space-y-3 text-lg">
@@ -25,31 +25,6 @@ const SECTIONS: Section[] = [
                     <span className="font-bold">
                         We will amplify your individual voice into a loud collective roar for real change.
                     </span>
-                </p>
-            </>
-        ),
-    },
-    {
-        id: "need",
-        title: "We need you",
-        teaser: "Find out how you can join others in demanding accountability.",
-        content: (
-            <>
-                <p className="text-lg leading-relaxed">
-                    Do you agree that decency is in too short a supply in our government?{" "}
-                    <span className="font-bold">
-                        Do you want to join your voice with others throughout the nation to demand far better of our elected officials?
-                    </span>
-                </p>
-                <p className="text-lg leading-relaxed">
-                    Are you frustrated and even angry about the divisiveness in our nation and the{" "}
-                    <span className="font-bold">
-                        frequent dishonesty, corruption, undermining of the public interest, and lack of accountability by local, state, and federal government officials?
-                    </span>
-                </p>
-                <p className="text-lg leading-relaxed">
-                    Elected representatives, from both major parties, too often serve only their own interests or those of their major funders.{" "}
-                    <span className="font-bold">Do you want to join with others in calling for their accountability?</span>
                 </p>
             </>
         ),
@@ -270,6 +245,18 @@ export default function Contribute() {
         return () => window.removeEventListener("message", handleMessage);
     }, []);
 
+    //Test: press T to trigger
+    // useEffect(() => {
+    //     function handleKey(e: KeyboardEvent) {
+    //         if (e.key === "t") {
+    //             launchCelebration();
+    //             setShowThankYou(true);
+    //         }
+    //     }
+    //     window.addEventListener("keydown", handleKey);
+    //     return () => window.removeEventListener("keydown", handleKey);
+    // }, []);
+
     const toggleSection = (section: string) => {
         setOpenSection((current) => (current === section ? null : section));
     };
@@ -302,7 +289,7 @@ export default function Contribute() {
                             seamless
                             frameBorder="0"
                             scrolling="no"
-                            height="700"
+                            height="750"
                             style={{
                                 width: "425px",
                                 minWidth: "250px",

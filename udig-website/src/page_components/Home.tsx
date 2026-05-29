@@ -249,11 +249,31 @@ export default function Home() {
                         accountability, and respectful public conduct.
                     </p>
 
-                    <div className="flex flex-col gap-4 text-lg text-black">
-                        <p>🟢 <strong>Certified for Decency:</strong> Signed pledge + no verified violations</p>
-                        <p>🟡 <strong>Provisionally Certified:</strong> Signed pledge + concerns under review</p>
-                        <p>🔴 <strong>Not Certified:</strong> Refused to sign or serious concerns identified</p>
-                        <p>⚫ <strong>Decertified:</strong> Signed pledge but later violated standards</p>
+                    <div className="space-y-4 text-lg text-black">
+                        <div className="flex items-center gap-3">
+                            <span className="h-3 w-3 shrink-0 rounded-full bg-green-500" />
+                            <p className="m-0"><span className="font-bold">Certified for Decency:</span> Signed pledge + no verified violations</p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <span className="h-3 w-3 shrink-0 rounded-full bg-yellow-400" />
+                            <p className="m-0"><span className="font-bold">Provisionally Certified:</span> Signed pledge + concerns under review</p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <span className="h-3 w-3 shrink-0 rounded-full bg-cyan-400" />
+                            <p className="m-0"><span className="font-bold">Not Yet Offered:</span> Pledge not yet provided</p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <span className="h-3 w-3 shrink-0 rounded-full bg-red-500" />
+                            <p className="m-0"><span className="font-bold">Not Certified:</span> Refused to sign or serious concerns identified</p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <span className="h-3 w-3 shrink-0 rounded-full bg-black" />
+                            <p className="m-0"><span className="font-bold">Decertified:</span> Signed pledge but later violated standards</p>
+                        </div>
                     </div>
 
                     <p className="text-black text-lg mt-8">

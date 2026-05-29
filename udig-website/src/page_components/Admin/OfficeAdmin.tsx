@@ -16,6 +16,7 @@ import {
 const CERT_LEVEL_OPTIONS = [
     "Certified for Decency",
     "Provisionally Certified",
+    "Not Yet Offered",
     "Not Certified",
     "Decertified",
 ] as const;
@@ -25,6 +26,7 @@ type CertLevel = (typeof CERT_LEVEL_OPTIONS)[number];
 const CERT_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
     "Certified for Decency":   { bg: "bg-emerald-50",  text: "text-emerald-700", dot: "bg-emerald-500" },
     "Provisionally Certified": { bg: "bg-amber-50",    text: "text-amber-700",   dot: "bg-amber-400"   },
+    "Not Yet Offered":         { bg: "bg-cyan-50",     text: "text-cyan-700",    dot: "bg-cyan-400"   },
     "Not Certified":           { bg: "bg-rose-50",     text: "text-rose-700",    dot: "bg-rose-400"    },
     "Decertified":             { bg: "bg-gray-200",    text: "text-black-200",   dot: "bg-black"       },
 };
@@ -618,7 +620,7 @@ export default function OfficeAdmin({ token }: TokenProp) {
             name: office.name, officeType: office.officeType,
             jurisdiction: decodeJurisdiction(office.state),
             certLevel: office.certLevel, imageId: office.imageId,
-            isCandidate: office.isCandidate,
+            isCandidate: office.isCandidate ?? false,
         });
         setEditContactInfo(contactInfoToForm(office.contactInfo));
         setEditFile(null);

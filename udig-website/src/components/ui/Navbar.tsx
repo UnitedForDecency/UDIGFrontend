@@ -122,7 +122,8 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                             <li><a href="/about/leadership" className="hover:underline">Leadership</a></li>
                                             <li><a href="/about/office-registry" className="hover:underline">Office Registry</a></li>
                                             <li><a href="/about/history" className="hover:underline">Our Story</a></li>
-                                            <li><a href="/about/press-coverage" className="hover:underline">Press Coverage</a></li>
+                                            <li><a href="/about/udig-coverage" className="hover:underline">Udig in the News</a></li>
+                                            <li><a href="/about/publications" className="hover:underline">Decency/Indecency Publications</a></li>
                                         </ul>
                                     </NavigationMenu.Content>
                                 </NavigationMenu.Item>
@@ -297,7 +298,8 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                             <li><a href="/impact" className="hover:underline">What is UDIG</a></li>
                                             <li><a href="/about/leadership" className="hover:underline">Leadership</a></li>
                                             <li><a href="/about/history" className="hover:underline">Our Story</a></li>
-                                            <li><a href="/about/press-coverage" className="hover:underline">Press Coverage</a></li>
+                                            <li><a href="/about/udig-coverage" className="hover:underline">Udig in the News</a></li>
+                                            <li><a href="/about/publications" className="hover:underline">Decency/Indecency Publications</a></li>
                                         </ul>
                                     </CollapsibleContent>
                                 </Collapsible>

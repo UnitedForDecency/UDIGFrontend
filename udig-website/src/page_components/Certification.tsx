@@ -34,6 +34,16 @@ export default function Certification() {
         </div>
     </div>
 
+        <div className="flex gap-3 items-start text-xl">
+        <span className="w-3 h-3 mt-2 rounded-full bg-cyan-400 shrink-0" />
+        <div>
+            <p className="font-bold">Not Yet Offered:</p>
+            <p className="text-gray-800">
+                Pledge not yet provided
+            </p>
+        </div>
+    </div>
+
     <div className="flex gap-3 items-start text-xl">
         <span className="w-3 h-3 mt-2 rounded-full bg-red-500 shrink-0" />
         <div>

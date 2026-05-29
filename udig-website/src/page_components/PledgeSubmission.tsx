@@ -161,7 +161,7 @@ export default function PledgeSubmissionPage({ token }: TokenProp) {
                             control={form.control}
                             render={({ field }) => (
                                 <Field>
-                                    <FieldLabel>Email</FieldLabel>
+                                    <FieldLabel>Email (For internal use only) </FieldLabel>
                                     <Input {...field} />
                                 </Field>
                             )}

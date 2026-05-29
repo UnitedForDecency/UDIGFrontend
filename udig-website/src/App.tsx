@@ -42,7 +42,7 @@ import MilestonesAdmin from "./page_components/Admin/MilestoneAdmin";
 import UsersAdmin from "./page_components/Admin/UsersAdmin";
 import GuidesAdmin from "./page_components/Admin/GuidesAdmin";
 import ReportsAdmin from "./page_components/Admin/ReportsAdmin";
-import PressCoverageAdmin from "./page_components/Admin/PressCoverageAdmin";
+import PressCoverageAdmin from "./page_components/Admin/UdigCoverageAdmin";
 import OfficeAdmin from './page_components/Admin/OfficeAdmin';
 
 
@@ -55,15 +55,17 @@ import EssayPost from "./page_components/EssayPost";
 import ContestPost from "./page_components/ContestPost";
 import ContestsAdmin from './page_components/Admin/ContestsAdmin';
 import SocialMedia from "./page_components/SocialMedia";
-import PressCoverage from "./page_components/PressCoverage";
+import PressCoverage from "./page_components/UdigCoverage";
 import PetitionSubmissionPage from './page_components/PetitionSubmission';
 import PledgeSubmissionPage from './page_components/PledgeSubmission';
 import Certification from './page_components/Certification';
 import PetitionsAndPledgeSubmissionsAdmin from './page_components/Admin/PetitionsAndPledgeSubmissionsAdmin';
 import WhyDecency from './page_components/Whydecency';
+import Publications from './page_components/Publications';
 
 import { APIProvider } from "@vis.gl/react-google-maps";
 import OfficeInfo from './page_components/OfficeInfo';
+import PublicationsAdmin from './page_components/Admin/PublicationsAdmin';
 
 export interface TokenProp {
     token: string | null;
@@ -151,7 +153,8 @@ function App() {
                             <Route path="/about/office-registry" element={<OfficeInfo token={token} />} />
                             <Route path="/contact" element={<Contact />} />
                             <Route path="/about/history" element={<History />} />
-                            <Route path="/about/press-coverage" element={<PressCoverage />} />
+                            <Route path="/about/udig-coverage" element={<PressCoverage />} />
+                            <Route path="/about/publications" element={<Publications />} />
 
                             {/* Get involved */}
                             <Route path="/get-involved" element={<GetInvolved />} />
@@ -223,7 +226,8 @@ function App() {
                             <Route path="images" element={<ImagesAdmin token={token} />} />
                             <Route path="milestones" element={<MilestonesAdmin token={token} />} />
                             <Route path="guides" element={<GuidesAdmin token={token} />} />
-                            <Route path="press-coverage" element={<PressCoverageAdmin token={token} />} />
+                            <Route path="udig-coverage" element={<PressCoverageAdmin token={token} />} />
+                            <Route path="publications" element={<PublicationsAdmin token={token} />} />
                             <Route path="reports" element={<ReportsAdmin token={token} />} />
                             </Route>
 

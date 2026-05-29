@@ -9,7 +9,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Field, FieldLabel, FieldSet } from "@/components/ui/field";
 import axios from "axios";
 
-interface PressCoverage {
+interface UdigCoverage {
     id: string;
     title: string;
     description: string;
@@ -21,28 +21,28 @@ interface PressCoverage {
 }
 
 const formSchema = z.object({
-    title: z.string().min(1).max(80),
-    description: z.string().min(1).max(200),
-    pressname: z.string().min(1),
+    title: z.string().min(1),
+    description: z.string().min(1),
+    pressname: z.string(),
     readTimeValue: z.string().optional(),
     readTimeUnit: z.string().optional(),
     contents: z.string(),
     link: z.string().optional()
 });
 
-export default function PressCoverageAdmin({ token }: TokenProp) {
+export default function UdigCoverageAdmin({ token }: TokenProp) {
     const API_BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL;
 
     const [content, setContent] = useState<string>("");
-    const [pressCoverages, setPressCoverages] = useState<PressCoverage[]>([]);
+    const [udigCoverages, setUdigCoverages] = useState<UdigCoverage[]>([]);
 
     // 🔥 NEW
     const [isEditOpen, setIsEditOpen] = useState(false);
-    const [editingCoverage, setEditingCoverage] = useState<PressCoverage | null>(null);
+    const [editingCoverage, setEditingCoverage] = useState<UdigCoverage | null>(null);
 
     useEffect(() => {
         axios.get(`${API_BASE}/press`)
-            .then((res) => setPressCoverages(Array.isArray(res.data) ? res.data : []))
+            .then((res) => setUdigCoverages(Array.isArray(res.data) ? res.data : []))
             .catch(console.error);
     }, []);
 
@@ -82,7 +82,7 @@ export default function PressCoverageAdmin({ token }: TokenProp) {
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                setPressCoverages((prev) =>
+                setUdigCoverages((prev) =>
                     prev.map((p) =>
                         p.id === editingCoverage.id
                             ? { ...p, ...payload }
@@ -93,15 +93,14 @@ export default function PressCoverageAdmin({ token }: TokenProp) {
                 setIsEditOpen(false);
                 setEditingCoverage(null);
             } else {
-                // 🔥 CREATE
                 const res = await axios.post(
                     `${API_BASE}/press`,
                     payload,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
-                setPressCoverages((prev) => [{
-                    id: res.data.pressCoverageId,
+                setUdigCoverages((prev) => [{
+                    id: res.data.udigCoverageId,
                     ...payload
                 }, ...prev]);
             }
@@ -123,10 +122,10 @@ export default function PressCoverageAdmin({ token }: TokenProp) {
             headers: { Authorization: `Bearer ${token}` }
         });
 
-        setPressCoverages((prev) => prev.filter((p) => p.id !== id));
+        setUdigCoverages((prev) => prev.filter((p) => p.id !== id));
     };
 
-    const openEdit = (coverage: PressCoverage) => {
+    const openEdit = (coverage: UdigCoverage) => {
         setEditingCoverage(coverage);
         setIsEditOpen(true);
 
@@ -145,7 +144,7 @@ export default function PressCoverageAdmin({ token }: TokenProp) {
 
     return (
         <section>
-            <h1 className="text-3xl font-bold my-5">Press Coverage</h1>
+            <h1 className="text-3xl font-bold my-5">Udig in the News</h1>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="mb-10">
                 <FieldSet>
@@ -180,7 +179,16 @@ export default function PressCoverageAdmin({ token }: TokenProp) {
                     <Controller name="pressname" control={form.control}
                         render={({ field }) => (
                             <Field>
-                                <FieldLabel>Press</FieldLabel>
+                                <FieldLabel>Source</FieldLabel>
+                                <Input {...field} />
+                            </Field>
+                        )}
+                    />
+
+                    <Controller name="readTimeValue" control={form.control}
+                        render={({ field }) => (
+                            <Field>
+                                <FieldLabel>How long does it take to read (estimate)</FieldLabel>
                                 <Input {...field} />
                             </Field>
                         )}
@@ -202,18 +210,24 @@ export default function PressCoverageAdmin({ token }: TokenProp) {
             </form>
 
             {/* LIST */}
-            {pressCoverages.map((c) => (
-                <div key={c.id} className="border p-4 mb-3 flex justify-between">
-                    <div>
-                        <h3>{c.title}</h3>
-                        <p>{c.description}</p>
+            {udigCoverages.map((c) => (
+                <div key={c.id} className="border p-4 mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                        <h3 className="break-words font-semibold">{c.title}</h3>
+                        <p className="break-words">{c.description}</p>
                     </div>
 
-                    <div className="flex gap-2">
-                        <button onClick={() => openEdit(c)} className="bg-blue-500 text-white px-3 py-1 rounded">
+                    <div className="flex shrink-0 gap-2 self-start sm:self-auto">
+                        <button
+                            onClick={() => openEdit(c)}
+                            className="bg-blue-500 text-white px-3 py-1 rounded"
+                        >
                             Edit
                         </button>
-                        <button onClick={() => handleDelete(c.id)} className="bg-red-500 text-white px-3 py-1 rounded">
+                        <button
+                            onClick={() => handleDelete(c.id)}
+                            className="bg-red-500 text-white px-3 py-1 rounded"
+                        >
                             Delete
                         </button>
                     </div>
@@ -235,7 +249,7 @@ export default function PressCoverageAdmin({ token }: TokenProp) {
                             ✕
                         </button>
 
-                        <h2 className="text-xl mb-4">Edit Press Coverage</h2>
+                        <h2 className="text-xl mb-4">Edit Udig Coverages</h2>
 
                         {/* SAME FORM */}
                         <form onSubmit={form.handleSubmit(onSubmit)}>

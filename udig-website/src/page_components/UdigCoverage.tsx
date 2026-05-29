@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 
 const PAGE_SIZE = 4;
 
-interface PressCoverage {
+interface UdigCoverage {
     id: string;
     title: string;
     description: string;
@@ -15,14 +15,14 @@ interface PressCoverage {
     link?: string;
 }
 
-export default function PressCoverage() {
-    const [presscoverage, setPressCoverage] = useState<PressCoverage[]>([]);
+export default function UdigCoverage() {
+    const [udigcoverage, setUdigCoverage] = useState<UdigCoverage[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [activeCategory, setActiveCategory] = useState("ALL");
     const [page, setPage] = useState(1);
 
-    const [selectedCoverage, setSelectedCoverage] = useState<PressCoverage | null>(null);
+    const [selectedCoverage, setSelectedCoverage] = useState<UdigCoverage | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const API_BASE = import.meta.env.VITE_MONGO_CONTROLLER_URL;
@@ -30,8 +30,8 @@ export default function PressCoverage() {
     // Fetch data
     useEffect(() => {
         axios.get(`${API_BASE}/press`)
-            .then((res) => setPressCoverage(Array.isArray(res.data) ? res.data : []))
-            .catch((err) => console.error("Failed to fetch presscoverage:", err))
+            .then((res) => setUdigCoverage(Array.isArray(res.data) ? res.data : []))
+            .catch((err) => console.error("Failed to fetch udigcoverage:", err))
             .finally(() => setLoading(false));
     }, []);
 
@@ -50,11 +50,11 @@ export default function PressCoverage() {
     }, [isModalOpen]);
 
     const categories = useMemo(() => {
-        return ["ALL", ...Array.from(new Set(presscoverage.map((g) => g.pressname)))];
-    }, [presscoverage]);
+        return ["ALL", ...Array.from(new Set(udigcoverage.map((g) => g.pressname)))];
+    }, [udigcoverage]);
 
     const filtered = useMemo(() => {
-        return presscoverage.filter((item) => {
+        return udigcoverage.filter((item) => {
             const matchesCategory =
                 activeCategory === "ALL" || item.pressname === activeCategory;
 
@@ -64,7 +64,7 @@ export default function PressCoverage() {
 
             return matchesCategory && matchesSearch;
         });
-    }, [search, activeCategory, presscoverage]);
+    }, [search, activeCategory, udigcoverage]);
 
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
     const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -79,11 +79,8 @@ export default function PressCoverage() {
                         Resources
                     </p>
                     <h1 className="text-5xl font-bold text-yale-blue mb-3">
-                        Press Coverage
+                        UDIG in the News
                     </h1>
-                    <p className="text-lg text-graphite max-w-2xl mx-auto">
-                        The times UDIG has been featured in the press.
-                    </p>
                 </div>
 
                 {/* SEARCH + FILTER */}
@@ -138,9 +135,9 @@ export default function PressCoverage() {
                                 }}
                                 className="cursor-pointer block bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow p-6 group"
                             >
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1 text-left">
-                                        <div className="flex items-center gap-3 mb-2">
+                                <div className="flex gap-4 items-start">
+                                    <div className="min-w-0 flex-1 text-left">
+                                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                                             <span className="text-xs font-mono uppercase tracking-wide bg-antique-brass/40 text-stone-taupe px-2 py-0.5 rounded">
                                                 {item.pressname}
                                             </span>
@@ -151,17 +148,16 @@ export default function PressCoverage() {
                                             )}
                                         </div>
 
-                                        <h2 className="text-xl font-semibold text-yale-blue mb-1 group-hover:text-brick-ember transition-colors">
+                                        <h2 className="line-clamp-2 text-xl font-semibold text-yale-blue mb-2 group-hover:text-brick-ember transition-colors leading-snug break-words [overflow-wrap:anywhere]">
                                             {item.title}
                                         </h2>
 
-                                        <p className="text-sm text-graphite leading-relaxed">
+                                        <p className="line-clamp-3 text-sm text-graphite leading-relaxed break-words [overflow-wrap:anywhere]">
                                             {item.description}
                                         </p>
-
                                     </div>
 
-                                    <span className="text-xl text-steel-blue-grey group-hover:text-brick-ember transition-colors">
+                                    <span className="shrink-0 text-xl text-steel-blue-grey group-hover:text-brick-ember transition-colors mt-1">
                                         →
                                     </span>
                                 </div>
@@ -206,23 +202,23 @@ export default function PressCoverage() {
                 {isModalOpen && selectedCoverage && (
                     <div
                         onClick={() => setIsModalOpen(false)}
-                        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+                        className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto py-8 px-4"
                     >
                         <div
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white w-[90vw] max-w-4xl max-h-[85vh] overflow-y-auto rounded-2xl shadow-xl p-8 relative"
+                            className="bg-white w-full max-w-5xl rounded-2xl shadow-xl p-8 sm:p-12 relative overflow-hidden"
                         >
                             {/* CLOSE */}
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl"
+                                className="absolute top-5 right-5 text-gray-400 hover:text-black text-2xl leading-none"
                             >
                                 ✕
                             </button>
 
                             {/* HEADER */}
-                            <div className="mb-6">
-                                <div className="flex items-center gap-3 mb-2">
+                            <div className="mb-8 pr-8">
+                                <div className="flex items-center gap-3 mb-3 flex-wrap">
                                     <span className="text-xs font-mono uppercase bg-antique-brass/40 text-stone-taupe px-2 py-0.5 rounded">
                                         {selectedCoverage.pressname}
                                     </span>
@@ -233,11 +229,11 @@ export default function PressCoverage() {
                                     )}
                                 </div>
 
-                                <h2 className="text-3xl font-bold text-yale-blue mb-2">
+                                <h2 className="text-3xl sm:text-4xl font-bold text-yale-blue mb-3 break-words [overflow-wrap:anywhere] leading-tight">
                                     {selectedCoverage.title}
                                 </h2>
 
-                                <p className="text-sm text-graphite">
+                                <p className="text-base text-graphite leading-relaxed break-words [overflow-wrap:anywhere]">
                                     {selectedCoverage.description}
                                 </p>
 
@@ -246,20 +242,27 @@ export default function PressCoverage() {
                                         href={selectedCoverage.link}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm text-yale-blue hover:underline mt-2 inline-block"
+                                        className="text-sm text-yale-blue hover:underline mt-3 inline-block"
                                     >
                                         View original source →
                                     </a>
                                 )}
                             </div>
 
+                            <hr className="border-gray-100 mb-8" />
+
                             {/* CONTENT */}
                             <article
-                                className="prose max-w-none"
+                                className="prose prose-lg max-w-none
+                                    prose-p:text-graphite prose-p:leading-[1.85]
+                                    prose-p:break-words prose-headings:text-yale-blue
+                                    prose-a:text-yale-blue prose-a:underline
+                                    [&_*]:max-w-full [&_*]:[overflow-wrap:break-word] [&_*]:[word-break:break-word]
+                                    [&_iframe]:w-full [&_iframe]:rounded-lg [&_iframe]:my-4"
                                 dangerouslySetInnerHTML={{
                                     __html: DOMPurify.sanitize(
                                         selectedCoverage.contents
-                                            .split(/\n\s*\n/) // split by empty lines
+                                            .split(/\n\s*\n/)
                                             .map((p) => `<p>${p.trim()}</p>`)
                                             .join(""),
                                         {

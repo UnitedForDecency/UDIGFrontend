@@ -17,6 +17,7 @@ type OfficeInfoDTO = {
 const CERT_LEVEL_OPTIONS = [
     "Certified for Decency",
     "Provisionally Certified",
+    "Not Yet Offered",
     "Not Certified",
     "Decertified",
 ] as const;
@@ -24,6 +25,7 @@ const CERT_LEVEL_OPTIONS = [
 const CERT_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
     "Certified for Decency":   { bg: "bg-emerald-50",  text: "text-emerald-700", dot: "bg-emerald-500" },
     "Provisionally Certified": { bg: "bg-amber-50",    text: "text-amber-700",   dot: "bg-amber-400"   },
+    "Not Yet Offered":         { bg: "bg-cyan-50",     text: "text-cyan-700",    dot: "bg-cyan-400"   },
     "Not Certified":           { bg: "bg-rose-50",     text: "text-rose-700",    dot: "bg-rose-400"    },
     "Decertified":             { bg: "bg-gray-200",    text: "text-black-200",   dot: "bg-black"       },
 };
@@ -31,6 +33,7 @@ const CERT_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
 const CERT_REASONS: Record<string, string> = {
     "Certified for Decency":   "Signed pledge + no verified violations",
     "Provisionally Certified": "Minor concerns under review",
+    "Not Yet Offered":         "Pledge not yet provided",
     "Not Certified":           "Refused to sign or significant violations",
     "Decertified":             "Serious or repeated violations after signing",
 };

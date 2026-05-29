@@ -18,7 +18,8 @@ const Sections = [
     "images",
     "milestones",
     "guides",
-    "press-coverage",
+    "udig-coverage",
+    "publications",
     "reports"
 ] as const;
 
