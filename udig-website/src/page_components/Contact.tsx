@@ -1,4 +1,4 @@
-import { SocialIcon } from "react-social-icons";
+// import { SocialIcon } from "react-social-icons";
 
 const glowBlobs = [
     {

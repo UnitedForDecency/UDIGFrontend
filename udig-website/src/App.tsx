@@ -175,7 +175,7 @@ function App() {
                             <Route path="/programs" element={<Programs />} />
                             <Route path="/programs/essays" element={<Essays />} />
                             <Route path="/programs/essays/:id" element={<EssayPost />} />
-                            <Route path="/programs/contests/:id" element={<ContestPost token={token} />} />
+                            <Route path="/programs/contests/:id" element={<ContestPost />} />
                             <Route path="/programs/videos" element={<VideoPage />} />
                             <Route path="/programs/issues" element={<Issues />} />
                             <Route path="/programs/issues/:id" element={<IssuePost />} />
@@ -188,7 +188,7 @@ function App() {
                             <Route path="/programs/videos" element={<VideoPage />} />
                             <Route path="/programs/issues" element={<Issues />} />
                             <Route path="/programs/issues/:id" element={<IssuePost />} />
-                            <Route path="/programs/contests/:id" element={<ContestPost token={token} />} />
+                            <Route path="/programs/contests/:id" element={<ContestPost />} />
 
                             {/* Auth */}
                             <Route path="/login" element={<Login onLogin={handleLogin} />} />
