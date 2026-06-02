@@ -22,6 +22,7 @@ import GuidePost from "@/page_components/GuidePost";
 import Impact from "@/page_components/Impact";
 import Programs from "@/page_components/Programs";
 import Essays from "@/page_components/Essays";
+import Contests from "@/page_components/Contests";
 import VideoPage from "@/page_components/Videopage";
 import BookClub from "@/page_components/BookClub";
 
@@ -143,96 +144,91 @@ function App() {
                 <APIProvider apiKey={import.meta.env.VITE_GOOGLEMAPS_API_KEY}>
                     <div className="grow">
                         <Routes>
-
-                            {/* Public */}
+                            {/* Home */}
                             <Route path="/" element={<Home />} />
-                            <Route path="/contribute" element={<Contribute />} />
-                            <Route path="/why-decency" element={<WhyDecency />} />
+
+                            {/* UDIG */}
                             <Route path="/about" element={<About />} />
+                            <Route path="/impact" element={<Impact />} />
                             <Route path="/about/leadership" element={<Leadership token={token} />} />
                             <Route path="/about/office-registry" element={<OfficeInfo token={token} />} />
-                            <Route path="/contact" element={<Contact />} />
                             <Route path="/about/history" element={<History />} />
                             <Route path="/about/udig-coverage" element={<PressCoverage />} />
                             <Route path="/about/publications" element={<Publications />} />
 
-                            {/* Get involved */}
+                            {/* Why Decency? */}
+                            <Route path="/why-decency" element={<WhyDecency />} />
+
+                            {/* Programs */}
+                            <Route path="/programs" element={<Programs />} />
+                            <Route path="/programs/essays" element={<Essays />} />
+                            <Route path="/programs/essays/:id" element={<EssayPost />} />
+                            <Route path="/programs/contests" element={<Contests />} />
+                            <Route path="/programs/contests/:id" element={<ContestPost />} />
+                            <Route path="/programs/videos" element={<VideoPage />} />
+                            <Route path="/programs/bookclub" element={<BookClub token={token} />} />
+                            <Route path="/programs/bookclub/:initialBookId" element={<BookClub token={token} />} />
+                            <Route path="/programs/issues" element={<Issues />} />
+                            <Route path="/programs/issues/:id" element={<IssuePost />} />
+
+                            {/* Get Involved */}
                             <Route path="/get-involved" element={<GetInvolved />} />
-                            <Route path="/get-involved/events" element={<Events/>} />
                             <Route path="/get-involved/volunteer" element={<Volunteer />} />
+                            <Route path="/get-involved/events" element={<Events/>} />
                             <Route path="/get-involved/community" element={<Community token={token} />} />
                             <Route path="/get-involved/socialmedia" element={<SocialMedia token={token} />} />
                             <Route path="/get-involved/guides" element={<Guides />} />
                             <Route path="/get-involved/guides/:id" element={<GuidePost />} />
 
-                            {/* Petition & Pledge */}
+                            {/* Petitions & Pledges */}
                             <Route path="/petition-pledge/petition" element={<PetitionSubmissionPage token={token} />} />
                             <Route path="/petition-pledge/pledge" element={<PledgeSubmissionPage token={token} />} />
                             <Route path="/petition-pledge/certification" element={<Certification />} />
 
-                            {/* Programs */}
-                            <Route path="/impact" element={<Impact />} />
-                            <Route path="/programs" element={<Programs />} />
-                            <Route path="/programs/essays" element={<Essays />} />
-                            <Route path="/programs/essays/:id" element={<EssayPost />} />
-                            <Route path="/programs/contests/:id" element={<ContestPost />} />
-                            <Route path="/programs/videos" element={<VideoPage />} />
-                            <Route path="/programs/issues" element={<Issues />} />
-                            <Route path="/programs/issues/:id" element={<IssuePost />} />
+                            {/* Contact */}
+                            <Route path="/contact" element={<Contact />} />
 
-                            {/* Programs */}
-                            <Route path="/impact" element={<Impact />} />
-                            <Route path="/programs" element={<Programs />} />
-                            <Route path="/programs/essays" element={<Essays />} />
-                            <Route path="/programs/essays/:id" element={<EssayPost />} />
-                            <Route path="/programs/videos" element={<VideoPage />} />
-                            <Route path="/programs/issues" element={<Issues />} />
-                            <Route path="/programs/issues/:id" element={<IssuePost />} />
-                            <Route path="/programs/contests/:id" element={<ContestPost />} />
+                            {/* Contribute */}
+                            <Route path="/contribute" element={<Contribute />} />
 
                             {/* Auth */}
-                            <Route path="/login" element={<Login onLogin={handleLogin} />} />
                             <Route path="/signup" element={<Signup />} />
+                            <Route path="/login" element={<Login onLogin={handleLogin} />} />
 
-                            <Route path="/programs/bookclub" element={<BookClub token={token} />} />
-                            <Route path="/programs/bookclub/:initialBookId" element={<BookClub token={token} />} />
-
-
-                        {/* Admin routes */}
-                        <Route
-                            path="/admin/*"
-                            element={
-                                isAdmin === null ? (
-                                    <div>Checking admin access...</div>
-                                ) : token && isAdmin === true ? (
-                                    <AdminDashboard token={token} />
-                                ) : (
-                                    <Navigate to="/" replace />
-                                )
-                            }
-                        >
-                            {/* Nested admin pages */}
-                            <Route path="books" element={<BooksAdmin token={token} />} />
-                            
-                            <Route path="essays" element={<EssaysAdmin token={token} />} />
-                            <Route path="contests" element={<ContestsAdmin token={token} />}/>
-                            <Route path="events" element={<EventsAdmin token={token} />} />
-                            <Route path="petitions-and-pledges" element={<PetitionsAndPledgeSubmissionsAdmin token={token} />} />
-                            <Route path="impact" element={<ImpactAdmin token={token} />} />
-                            <Route path="users" element={<UsersAdmin token={token} />} />
-                            <Route path="elected-officials/candidates" element={<OfficeAdmin token={token} />} />
-                            <Route path="volunteer" element={<VolunteerAdmin token={token} />} />
-                            <Route path="issues" element={<IssuesAdmin token={token} />} />
-                            <Route path="images" element={<ImagesAdmin token={token} />} />
-                            <Route path="milestones" element={<MilestonesAdmin token={token} />} />
-                            <Route path="guides" element={<GuidesAdmin token={token} />} />
-                            <Route path="udig-coverage" element={<PressCoverageAdmin token={token} />} />
-                            <Route path="publications" element={<PublicationsAdmin token={token} />} />
-                            <Route path="reports" element={<ReportsAdmin token={token} />} />
+                            {/* Admin routes */}
+                            <Route
+                                path="/admin/*"
+                                element={
+                                    isAdmin === null ? (
+                                        <div>Checking admin access...</div>
+                                    ) : token && isAdmin === true ? (
+                                        <AdminDashboard token={token} />
+                                    ) : (
+                                        <Navigate to="/" replace />
+                                    )
+                                }
+                            >
+                                {/* Nested admin pages */}
+                                <Route path="books" element={<BooksAdmin token={token} />} />
+                                <Route path="essays" element={<EssaysAdmin token={token} />} />
+                                <Route path="contests" element={<ContestsAdmin token={token} />}/>
+                                <Route path="events" element={<EventsAdmin token={token} />} />
+                                <Route path="petitions-and-pledges" element={<PetitionsAndPledgeSubmissionsAdmin token={token} />} />
+                                <Route path="impact" element={<ImpactAdmin token={token} />} />
+                                <Route path="users" element={<UsersAdmin token={token} />} />
+                                <Route path="elected-officials/candidates" element={<OfficeAdmin token={token} />} />
+                                <Route path="volunteer" element={<VolunteerAdmin token={token} />} />
+                                <Route path="issues" element={<IssuesAdmin token={token} />} />
+                                <Route path="images" element={<ImagesAdmin token={token} />} />
+                                <Route path="milestones" element={<MilestonesAdmin token={token} />} />
+                                <Route path="guides" element={<GuidesAdmin token={token} />} />
+                                <Route path="udig-coverage" element={<PressCoverageAdmin token={token} />} />
+                                <Route path="publications" element={<PublicationsAdmin token={token} />} />
+                                <Route path="reports" element={<ReportsAdmin token={token} />} />
                             </Route>
 
-                            {/* fallback */}
-                            <Route path="*" element={<Home />} />
+                            {/* Fallback */}
+                            <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
                     </div>
                 </APIProvider>

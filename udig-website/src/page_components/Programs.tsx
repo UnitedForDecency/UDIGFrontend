@@ -92,11 +92,14 @@ export default function Programs() {
             return axios.get<Image[]>(
                 `${controllerUrl}/images/type/programs`
             ).then(res => {
-                const image = res.data.at(0);
+                const images: Image[] = res.data;
 
-                if(image !== undefined) {
-                    if(image.section === "programHeaderImage") {
-                        setHeaderImageData(image.imageData);
+                if(images.length !== 0) {
+                    for(const image of images) {
+                        if(image.section === "programHeaderImage") {
+                            setHeaderImageData(image.imageData);
+                            return;
+                        }
                     }
                 }
             }, (err: AxiosError) => {

@@ -1,12 +1,19 @@
+import {useEffect, useState, useRef} from "react";
+import axios, {AxiosError} from "axios";
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
-import { ChevronDown, MenuIcon } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
-import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerTrigger } from "./drawer";
-import { Button } from "./button";
-import { Collapsible, CollapsibleTrigger } from "@radix-ui/react-collapsible";
-import { CollapsibleContent } from "./collapsible";
+import {Collapsible, CollapsibleTrigger} from "@radix-ui/react-collapsible";
+import {ChevronDown, MenuIcon} from "lucide-react";
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTrigger
+} from "./drawer";
+import {Button} from "./button";
+import {CollapsibleContent} from "./collapsible";
 
-type MenuItem = "about" | "programs" | "get-involved" | "petitions-pledges" | null;
+type MenuItem = "about" | "programs" | "get-involved" | "petitions-pledges";
 
 interface NavbarProps {
     isLoggedIn: boolean;
@@ -14,54 +21,61 @@ interface NavbarProps {
     onLogout: () => void;
 }
 
-interface ImageType {
+type Image = {
     id: string;
     imageData: string;
-    url: string;
     type: string;
     section: string;
-    createdAt?: string;
-    mimetype?: string;
-}
+};
 
-export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
-    const [openItem, setOpenItem] = useState<MenuItem>(null);
-    const [navbarImages, setNavbarImages] = useState<ImageType[]>([]);
+export default function Navbar({isLoggedIn, isAdmin, onLogout}: NavbarProps) {
+    const controllerUrl: string = import.meta.env.VITE_MONGO_CONTROLLER_URL;
+
+    const [logoImageData, setLogoImageData] = useState<string | null>(null);
+
+    const [openItem, setOpenItem] = useState<MenuItem | null>(null);
     const closeTimeout = useRef<number | null>(null);
 
-    useEffect(() => {
-        const fetchImages = async () => {
-            try {
-                const res = await fetch(`${import.meta.env.VITE_MONGO_CONTROLLER_URL}/images/type/navbar`);
-                const data = await res.json();
-                setNavbarImages(formatImages(data));
-            } catch (err) {
-                console.error("Failed to fetch navbar images:", err);
-            }
-        };
+    const fetchImages = async (): Promise<void> => {
+        try {
+            return axios.get<Image[]>(
+                `${controllerUrl}/images/type/navbar`
+            ).then(res => {
+                const images: Image[] = res.data;
 
+                if(images.length !== 0) {
+                    for(const image of images) {
+                        if(image.section === "logo") {
+                            setLogoImageData(image.imageData);
+                            return;
+                        }
+                    }
+                }
+            }, (err: AxiosError) => {
+                if(err.response?.data) {
+                    console.error(err.response.data);
+                }
+            });
+        } catch(err) {
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
         fetchImages();
     }, []);
 
-    const formatImages = (data: any[]) => {
-        return data
-            .map((img) => ({
-                ...img,
-                url: `data:${img.mimetype || "image/png"};base64,${img.imageData}`,
-            }))
-            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    };
-
-    const logoImage = navbarImages.find((img) => img.section === "logo") ?? navbarImages[0];
-
     // Opens menu and cancels any pending close
-    const openMenu = (item: Exclude<MenuItem, null>) => {
-        if (closeTimeout.current) clearTimeout(closeTimeout.current);
+    const openMenu = (item: MenuItem): void => {
+        if(closeTimeout.current !== null) {
+            clearTimeout(closeTimeout.current);
+            closeTimeout.current = null;
+        }
         setOpenItem(item);
     };
 
     // Delays closing menu to give user time to hover into dropdown
-    const closeMenu = () => {
+    const closeMenu = (): void => {
         closeTimeout.current = window.setTimeout(() => {
             setOpenItem(null);
         }, 200); // 200ms delay
@@ -72,7 +86,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
         { name: "Contribute", href: "/contribute" },
     ];
 
-        const whyDecency = [
+    const whyDecency = [
         { name: "Why Decency?", href: "/why-decency" },
     ];
 
@@ -83,7 +97,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                     {/* Logo */}
                     <a href="/" className="flex items-center gap-3">
                         <img
-                            src={logoImage?.url}
+                            src={`data:image/png;base64,${logoImageData ?? ""}`}
                             alt="UDIG Logo"
                             className="w-12"
                         />
@@ -97,7 +111,6 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                     <div className="flex items-center gap-6 text-porcelain relative">
                         <NavigationMenu.Root>
                             <NavigationMenu.List className="flex items-center gap-6 text-porcelain relative">
-
                                 {/* ABOUT */}
                                 <NavigationMenu.Item
                                     onMouseEnter={() => openMenu("about")}
@@ -127,7 +140,6 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                         </ul>
                                     </NavigationMenu.Content>
                                 </NavigationMenu.Item>
-
                                 {whyDecency.map((item) => (
                                     <NavigationMenu.Item key={item.name}>
                                         <NavigationMenu.Link href={item.href} className="hover:underline">
@@ -135,7 +147,6 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                         </NavigationMenu.Link>
                                     </NavigationMenu.Item>
                                 ))}
-
                                 {/* PROGRAMS */}
                                 <NavigationMenu.Item
                                     onMouseEnter={() => openMenu("programs")}
@@ -156,13 +167,13 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                     >
                                         <ul className="flex flex-col gap-2">
                                             <li><a href="/programs/essays" className="hover:underline">Essays</a></li>
+                                            <li><a href="/programs/contests" className="hover:underline">Essay Contests</a></li>
                                             <li><a href="/programs/videos" className="hover:underline">Videos</a></li>
                                             <li><a href="/programs/bookclub" className="hover:underline">Book Club</a></li>
                                             <li><a href="/programs/issues" className="hover:underline">Current Issues</a></li>
                                         </ul>
                                     </NavigationMenu.Content>
                                 </NavigationMenu.Item>
-
                                 {/* GET INVOLVED */}
                                 <NavigationMenu.Item
                                     onMouseEnter={() => openMenu("get-involved")}
@@ -190,20 +201,17 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                         </ul>
                                     </NavigationMenu.Content>
                                 </NavigationMenu.Item>
-
-
                                 {/* PETITIONS & PLEDGES */}
                                 <NavigationMenu.Item
                                     onMouseEnter={() => openMenu("petitions-pledges")}
                                     onMouseLeave={closeMenu}
                                 >
                                     <NavigationMenu.Trigger className="flex items-center gap-1 cursor-pointer">
-                                        <a href="/petitions" className="hover:underline">
+                                        <a href="/petition-pledge/petition" className="hover:underline">
                                             Petitions & Pledges
                                         </a>
                                         <ChevronDown size={16} />
                                     </NavigationMenu.Trigger>
-
                                     <NavigationMenu.Content
                                         onMouseEnter={() => openMenu("petitions-pledges")}
                                         onMouseLeave={closeMenu}
@@ -232,7 +240,6 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                         </ul>
                                     </NavigationMenu.Content>
                                 </NavigationMenu.Item>
-
                                 {/* Normal Links */}
                                 {navItems.map((item) => (
                                     <NavigationMenu.Item key={item.name}>
@@ -243,7 +250,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                 ))}
                             </NavigationMenu.List>
                         </NavigationMenu.Root>
-        \
+                        \
                         {/* Login / Admin Links */}
                         {!isLoggedIn ? (
                             <a href="/login">Login</a>
@@ -311,6 +318,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                         <ul className="flex flex-col gap-2 p-5 pt-2 ml-4">
                                             <li><a href="/programs" className="hover:underline">Our Programs</a></li>
                                             <li><a href="/programs/essays" className="hover:underline">Essays</a></li>
+                                            <li><a href="/programs/contests" className="hover:underline">Essay Contests</a></li>
                                             <li><a href="/programs/videos" className="hover:underline">Videos</a></li>
                                             <li><a href="/programs/bookclub" className="hover:underline">Book Club</a></li>
                                             <li><a href="/programs/blogs" className="hover:underline">Blog Posts</a></li>
@@ -341,10 +349,9 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
 
                                 <CollapsibleContent>
                                     <ul className="flex flex-col gap-2 p-5 pt-2 ml-4">
-                                        <li><a href="/petitions" className="hover:underline">View Petitions</a></li>
-                                        <li><a href="/petitions/create" className="hover:underline">Start a Petition</a></li>
-                                        <li><a href="/pledges" className="hover:underline">Take a Pledge</a></li>
-                                        <li><a href="/pledges/create" className="hover:underline">Create a Pledge</a></li>
+                                        <li><a href="/petition-pledge/petition" className="hover:underline">Decency Petition</a></li>
+                                        <li><a href="/petition-pledge/pledge" className="hover:underline">Decency Pledge</a></li>
+                                        <li><a href="/petition-pledge/certification" className="hover:underline">Decency Certifications</a></li>
                                     </ul>
                                 </CollapsibleContent>
                             </Collapsible>
@@ -382,7 +389,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                             <h3 className="text-porcelain font-semibold">United for Decency in Government</h3>
                         </div>
                         <img
-                            src={logoImage?.url}
+                            src={`data:image/png;base64,${logoImageData ?? ""}`}
                             alt="UDIG Logo"
                             className="w-12"
                         />
