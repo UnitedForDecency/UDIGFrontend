@@ -1,4 +1,3 @@
-import { type TokenProp } from "@/App";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +38,7 @@ async function getCityStateFromZip(zip: string): Promise<{ city: string; state: 
     }
 }
 
-export default function Leadership({ token }: TokenProp) {
+export default function Leadership() {
     const [displaySupporters, setDisplaySupporters] = useState<DisplaySupporter[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

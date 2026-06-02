@@ -1,7 +1,6 @@
 import { type TokenProp } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import RichTextEditor from "@/components/ui/RichEditor";
 import { useEffect, useState } from "react";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";

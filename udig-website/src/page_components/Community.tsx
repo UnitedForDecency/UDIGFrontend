@@ -15,7 +15,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { FieldSet, FieldGroup, Field, FieldError } from '@/components/ui/field';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MarkerClusterer, type Marker } from '@googlemaps/markerclusterer';
-import type { TokenProp } from '@/App';
 import axios from 'axios';
 
 interface Supporter {
@@ -212,7 +211,7 @@ function BecomeSupporterPanel({
 }
 
 // --- Main Community Component ---
-export default function Community({ token }: TokenProp) {
+export default function Community() {
     const map = useMap();
     const [markers, setMarkers] = useState<{ [key: string]: Marker }>({});
     const [locations, setLocations] = useState<Poi[]>([]);
@@ -225,7 +224,6 @@ export default function Community({ token }: TokenProp) {
     const [clusterSupporters, setClusterSupporters] = useState<SupporterWithCoords[]>([]);
     const [clusterPosition, setClusterPosition] = useState<google.maps.LatLngLiteral | null>(null);
 
-    const isAdmin = !!token;
     const clusterer = useRef<MarkerClusterer | null>(null);
     const supportersRef = useRef<SupporterWithCoords[]>([]);
 

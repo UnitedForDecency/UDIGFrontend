@@ -149,7 +149,7 @@ function App() {
                             <Route path="/contribute" element={<Contribute />} />
                             <Route path="/why-decency" element={<WhyDecency />} />
                             <Route path="/about" element={<About />} />
-                            <Route path="/about/supporters" element={<Supporter token={token} />} />
+                            <Route path="/about/supporters" element={<Supporter />} />
                             <Route path="/about/office-registry" element={<OfficeInfo token={token} />} />
                             <Route path="/contact" element={<Contact />} />
                             <Route path="/about/history" element={<History />} />
@@ -160,7 +160,7 @@ function App() {
                             <Route path="/get-involved" element={<GetInvolved />} />
                             <Route path="/get-involved/events" element={<Events/>} />
                             <Route path="/get-involved/volunteer" element={<Volunteer />} />
-                            <Route path="/get-involved/community" element={<Community token={token} />} />
+                            <Route path="/get-involved/community" element={<Community />} />
                             <Route path="/get-involved/socialmedia" element={<SocialMedia token={token} />} />
                             <Route path="/get-involved/guides" element={<Guides />} />
                             <Route path="/get-involved/guides/:id" element={<GuidePost />} />
