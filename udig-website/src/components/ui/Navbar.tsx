@@ -119,10 +119,10 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                         <ul className="flex flex-col gap-2">
                                             <li><a href="/about" className="hover:underline">Our Vision and Mission</a></li>
                                             <li><a href="/impact" className="hover:underline">What is UDIG</a></li>
-                                            <li><a href="/about/leadership" className="hover:underline">Leadership</a></li>
+                                            <li><a href="/about/supporters" className="hover:underline">Supporters</a></li>
                                             <li><a href="/about/office-registry" className="hover:underline">Office Registry</a></li>
                                             <li><a href="/about/history" className="hover:underline">Our Story</a></li>
-                                            <li><a href="/about/udig-coverage" className="hover:underline">Udig in the News</a></li>
+                                            <li><a href="/about/udig-coverage" className="hover:underline">UDIG in the News</a></li>
                                             <li><a href="/about/publications" className="hover:underline">Decency/Indecency Publications</a></li>
                                         </ul>
                                     </NavigationMenu.Content>
@@ -298,7 +298,7 @@ export default function Navbar({ isLoggedIn, isAdmin, onLogout }: NavbarProps) {
                                             <li><a href="/impact" className="hover:underline">What is UDIG</a></li>
                                             <li><a href="/about/leadership" className="hover:underline">Leadership</a></li>
                                             <li><a href="/about/history" className="hover:underline">Our Story</a></li>
-                                            <li><a href="/about/udig-coverage" className="hover:underline">Udig in the News</a></li>
+                                            <li><a href="/about/udig-coverage" className="hover:underline">UDIG in the News</a></li>
                                             <li><a href="/about/publications" className="hover:underline">Decency/Indecency Publications</a></li>
                                         </ul>
                                     </CollapsibleContent>

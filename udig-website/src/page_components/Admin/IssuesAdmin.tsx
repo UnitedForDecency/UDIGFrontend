@@ -224,7 +224,7 @@ export default function IssuesAdmin({ token }: TokenProp) {
 
                                             <Textarea
                                                 {...field}
-                                                className="min-h-[200px]"
+                                                className="h-[300px] w-full resize-none overflow-y-auto"
                                             />
                                         </Field>
                                     )}
@@ -260,9 +260,11 @@ export default function IssuesAdmin({ token }: TokenProp) {
                                     Created: {new Date(issue.createdAt!).toLocaleString()}
                                 </p>
 
-                                <p className="mt-2 whitespace-pre-wrap">
-                                    {issue.contents}
-                                </p>
+                                <div className="mt-2 max-h-80 overflow-y-auto rounded border p-3">
+                                    <p className="whitespace-pre-wrap break-words">
+                                        {issue.contents}
+                                    </p>
+                                </div>
                             </div>
 
                             <div className="flex gap-2">

@@ -1,83 +1,97 @@
 import { type TokenProp } from "@/App";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 
-
-type LeaderAccount = {
-    id?: string;
+type SupporterAccount = {
     _id?: string;
-    username?: string;
+    name?: string;
     email?: string;
-    role?: string;
-    city?: string;
-    state?: string;
+    zip?: string;
 };
 
+type DisplaySupporter = {
+    id: string;
+    name: string;
+    email: string;
+    city: string;
+    state: string;
+};
+
+async function getCityStateFromZip(zip: string): Promise<{ city: string; state: string }> {
+    const apiKey = import.meta.env.VITE_GOOGLEMAPS_API_KEY;
+    try {
+        const res = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(zip)}&key=${apiKey}`
+        );
+        const data = await res.json();
+        const components = data.results[0]?.address_components ?? [];
+        const city = components.find((c: any) =>
+            c.types.includes('locality') || c.types.includes('postal_town')
+        )?.long_name ?? '';
+        const state = components.find((c: any) =>
+            c.types.includes('administrative_area_level_1')
+        )?.short_name ?? '';
+        return { city, state };
+    } catch {
+        return { city: '', state: '' };
+    }
+}
+
 export default function Leadership({ token }: TokenProp) {
-    const [leaders, setLeaders] = useState<LeaderAccount[]>([]);
+    const [displaySupporters, setDisplaySupporters] = useState<DisplaySupporter[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!token) {
-            setLoading(false);
-            return;
-        }
-
         const fetchData = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
                 const res = await axios.get(
-                    `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/accounts/get/role`,
-                    {
-                        params: { role: "LEADER" },
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
+                    `${import.meta.env.VITE_MONGO_CONTROLLER_URL}/supporter`
                 );
 
-                const data = Array.isArray(res.data) ? res.data : [];
-                setLeaders(data);
+                const data: SupporterAccount[] = Array.isArray(res.data) ? res.data : [];
+
+                const withLocations = await Promise.all(
+                    data.map(async (s) => {
+                        const { city, state } = s.zip
+                            ? await getCityStateFromZip(s.zip)
+                            : { city: '', state: '' };
+                        return {
+                            id: s._id ?? s.email ?? crypto.randomUUID(),
+                            name: s.name ?? 'Unknown',
+                            email: s.email ?? 'No email',
+                            city: city || 'Unknown',
+                            state: state || 'Unknown',
+                        };
+                    })
+                );
+
+                setDisplaySupporters(withLocations);
             } catch (err) {
-                console.error("Failed to fetch leader data:", err);
-                setError("Failed to load leaders.");
-                setLeaders([]);
+                console.error("Failed to fetch supporter data:", err);
+                setError("Failed to load supporters.");
+                setDisplaySupporters([]);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [token]);
-
-    const displayLeaders = useMemo(
-        () =>
-            leaders
-                .map((leader) => ({
-                    id: leader.id ?? leader._id ?? leader.username ?? leader.email ?? crypto.randomUUID(),
-                    username: leader.username ?? "Unknown",
-                    email: leader.email ?? "No email",
-                    city: leader.city ?? "Unknown city",
-                    state: leader.state ?? "Unknown state",
-                    role: leader.role ?? "LEADER",
-                }))
-                .filter((leader) => leader.role === "LEADER"),
-        [leaders]
-    );
+    }, []);
 
     return (
         <section className="bg-alice-blue min-h-screen">
             <div className="text-center py-20">
                 <h1 className="text-5xl font-bold text-yale-blue underline decoration-brick-ember underline-offset-4">
-                    Our Leaders
+                    Our Supporters
                 </h1>
                 <p className="text-xl text-graphite max-w-2xl mx-auto mt-4">
-                    Meet the people guiding our mission and empowering communities nationwide.
+                    Meet the people standing behind our mission and empowering communities nationwide.
                 </p>
             </div>
 
@@ -97,20 +111,20 @@ export default function Leadership({ token }: TokenProp) {
 
             {!loading && (
                 <div className="max-w-6xl mx-auto px-4 pb-20">
-                    {displayLeaders.length === 0 ? (
-                        <p className="text-center text-graphite text-lg py-12">No leaders yet.</p>
+                    {displaySupporters.length === 0 ? (
+                        <p className="text-center text-graphite text-lg py-12">No supporters yet.</p>
                     ) : (
                         <Card className="shadow-lg border-2 border-midnight-slate">
                             <CardHeader>
-                                <CardTitle className="text-xl">Leaders ({displayLeaders.length})</CardTitle>
+                                <CardTitle className="text-xl">Supporters ({displaySupporters.length})</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
                                     <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-                                        <thead className="bg-gray-50">
+                                        <thead className="bg-gray-50 sticky top-0 z-10">
                                             <tr>
                                                 <th className="px-4 py-3 text-sm font-semibold text-gray-700">
-                                                    Username
+                                                    Name
                                                 </th>
                                                 <th className="px-4 py-3 text-sm font-semibold text-gray-700">
                                                     Email
@@ -118,30 +132,24 @@ export default function Leadership({ token }: TokenProp) {
                                                 <th className="px-4 py-3 text-sm font-semibold text-gray-700">
                                                     Location
                                                 </th>
-                                                <th className="px-4 py-3 text-sm font-semibold text-gray-700">
-                                                    Role
-                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 bg-white">
-                                            {displayLeaders.map((leader) => (
-                                                <tr key={leader.id} className="align-top">
+                                            {displaySupporters.map((supporter) => (
+                                                <tr key={supporter.id} className="align-top">
                                                     <td className="px-4 py-4 min-w-40">
                                                         <span className="font-medium text-gray-900">
-                                                            {leader.username}
+                                                            {supporter.name}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-4 min-w-52">
-                                                        <span className="text-gray-700">{leader.email}</span>
+                                                        <span className="text-gray-700">{supporter.email}</span>
                                                     </td>
                                                     <td className="px-4 py-4 min-w-44">
                                                         <span className="text-gray-700">
-                                                            {leader.city}, {leader.state}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 py-4 min-w-36">
-                                                        <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                                                            {leader.role}
+                                                            {supporter.city && supporter.state
+                                                                ? `${supporter.city}, ${supporter.state}`
+                                                                : 'Unknown'}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -157,12 +165,10 @@ export default function Leadership({ token }: TokenProp) {
                             <h2 className="text-3xl font-bold text-yale-blue mb-4">
                                 Want to Connect With Our Community?
                             </h2>
-
                             <p className="text-graphite text-lg mb-6">
                                 Meet more members, collaborate on initiatives, and get involved with
                                 people making a difference nationwide.
                             </p>
-
                             <Link
                                 to="/get-involved/community"
                                 className="inline-flex items-center rounded-xl bg-yale-blue px-6 py-3 text-white font-semibold shadow hover:bg-blue-900 transition-colors duration-200"

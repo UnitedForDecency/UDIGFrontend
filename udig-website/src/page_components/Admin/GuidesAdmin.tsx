@@ -110,7 +110,7 @@ export default function GuidesAdmin({ token }: TokenProp) {
                 <h1 className="text-3xl font-bold underline text-yale-blue decoration-brick-ember my-5">
                     Add New Guide
                 </h1>
-                <form className="flex flex-col items-center" onSubmit={form.handleSubmit(onSubmit)}>
+                <form className="flex flex-col items-stretch w-full max-w-4xl mx-auto" onSubmit={form.handleSubmit(onSubmit)}>
                     <FieldSet>
                         <Controller name="title" control={form.control}
                             render={({ field, fieldState }) => (
@@ -165,20 +165,37 @@ export default function GuidesAdmin({ token }: TokenProp) {
                                 </Field>
                             )}
                         />
-                        <Controller name="contents" control={form.control}
-                            render={({ field, fieldState }) => (
-                                <Field data-invalid={fieldState.invalid}>
-                                    <FieldLabel className="text-2xl">Content</FieldLabel>
-                                    {contentsMissing && <FieldError>Contents must not be empty.</FieldError>}
-                                    <RichTextEditor {...field}
-                                        aria-invalid={fieldState.invalid}
-                                        onChange={(html) => setContent(html)}
-                                        placeholder="Start writing…"
-                                    />
-                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                                </Field>
-                            )}
-                        />
+                        <Controller
+                        name="contents"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid || contentsMissing}>
+                                <FieldLabel className="text-2xl">
+                                    Content
+                                </FieldLabel>
+
+                                <textarea
+                                    {...field}
+                                    rows={15}
+                                    placeholder="Start writing..."
+                                    className="w-full min-h-[400px] rounded-md border border-input bg-background px-4 py-3 text-sm resize-y"
+                                    aria-invalid={fieldState.invalid || contentsMissing}
+                                    onChange={(e) => {
+                                        field.onChange(e);
+                                        setContent(e.target.value);
+                                    }}
+                                />
+
+                                {(contentsMissing || fieldState.error) && (
+                                    <FieldError>
+                                        {contentsMissing
+                                            ? "Content must not be empty."
+                                            : fieldState.error?.message}
+                                    </FieldError>
+                                )}
+                            </Field>
+                        )}
+                    />
                         <Button type="submit" disabled={loading} className="max-w-20">
                             {loading ? "Posting..." : "Post"}
                         </Button>

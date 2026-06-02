@@ -266,7 +266,7 @@ export default function Contribute() {
             {showThankYou && <ThankYouModal onClose={() => setShowThankYou(false)} />}
 
             {/* INTRO */}
-            <div className="w-full py-20 px-6 flex justify-center">
+            <div className="w-full py-5 px-6 flex justify-center">
                 <div className="max-w-4xl w-full flex flex-col items-center text-center space-y-6">
                     <h1 className="text-4xl font-bold underline underline-offset-4 decoration-brick-ember">
                         Want to make a difference?
@@ -289,7 +289,7 @@ export default function Contribute() {
                             seamless
                             frameBorder="0"
                             scrolling="no"
-                            height="750"
+                            height="700"
                             style={{
                                 width: "425px",
                                 minWidth: "250px",
@@ -301,7 +301,7 @@ export default function Contribute() {
             </div>
 
             {/* COLLAPSIBLE CONTENT AREA */}
-            <div className="w-full py-20 px-6 flex justify-center">
+            <div className="w-full py-5 px-6 flex justify-center">
                 <div className="max-w-4xl w-full space-y-6">
                     {SECTIONS.map((section) => (
                         <AccordionCard

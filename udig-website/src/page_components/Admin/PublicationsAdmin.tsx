@@ -194,11 +194,21 @@ export default function PublicationsAdmin({ token }: TokenProp) {
                         )}
                     />
 
-                    <Controller name="contents" control={form.control}
-                        render={() => (
+                    <Controller
+                        name="contents"
+                        control={form.control}
+                        render={({ field }) => (
                             <Field>
                                 <FieldLabel>Content</FieldLabel>
-                                <RichTextEditor onChange={setContent} />
+                                <textarea
+                                    {...field}
+                                    rows={12}
+                                    className="w-full border rounded-md p-3"
+                                    onChange={(e) => {
+                                        field.onChange(e);
+                                        setContent(e.target.value);
+                                    }}
+                                />
                             </Field>
                         )}
                     />

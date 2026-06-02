@@ -39,7 +39,7 @@ import VolunteerAdmin from "./page_components/Admin/VolunteerAdmin";
 import IssuesAdmin from "./page_components/Admin/IssuesAdmin";
 import ImagesAdmin from "./page_components/Admin/ImagesAdmin";
 import MilestonesAdmin from "./page_components/Admin/MilestoneAdmin";
-import UsersAdmin from "./page_components/Admin/UsersAdmin";
+import CommunityAdmin from "./page_components/Admin/CommunityAdmin";
 import GuidesAdmin from "./page_components/Admin/GuidesAdmin";
 import ReportsAdmin from "./page_components/Admin/ReportsAdmin";
 import PressCoverageAdmin from "./page_components/Admin/UdigCoverageAdmin";
@@ -47,7 +47,7 @@ import OfficeAdmin from './page_components/Admin/OfficeAdmin';
 
 
 // Other pages
-import Leadership from "@/page_components/Leadership";
+import Supporter from "@/page_components/Supporters";
 import History from "@/page_components/History.tsx";
 import Issues from "./page_components/Issues";
 import IssuePost from "./page_components/IssuePost";
@@ -62,7 +62,7 @@ import Certification from './page_components/Certification';
 import PetitionsAndPledgeSubmissionsAdmin from './page_components/Admin/PetitionsAndPledgeSubmissionsAdmin';
 import WhyDecency from './page_components/Whydecency';
 import Publications from './page_components/Publications';
-
+import VideoAdmin from './page_components/Admin/VideosAdmin';
 import { APIProvider } from "@vis.gl/react-google-maps";
 import OfficeInfo from './page_components/OfficeInfo';
 import PublicationsAdmin from './page_components/Admin/PublicationsAdmin';
@@ -149,7 +149,7 @@ function App() {
                             <Route path="/contribute" element={<Contribute />} />
                             <Route path="/why-decency" element={<WhyDecency />} />
                             <Route path="/about" element={<About />} />
-                            <Route path="/about/leadership" element={<Leadership token={token} />} />
+                            <Route path="/about/supporters" element={<Supporter token={token} />} />
                             <Route path="/about/office-registry" element={<OfficeInfo token={token} />} />
                             <Route path="/contact" element={<Contact />} />
                             <Route path="/about/history" element={<History />} />
@@ -219,11 +219,12 @@ function App() {
                             <Route path="events" element={<EventsAdmin token={token} />} />
                             <Route path="petitions-and-pledges" element={<PetitionsAndPledgeSubmissionsAdmin token={token} />} />
                             <Route path="impact" element={<ImpactAdmin token={token} />} />
-                            <Route path="users" element={<UsersAdmin token={token} />} />
+                            <Route path="community" element={<CommunityAdmin token={token} />} />
                             <Route path="elected-officials/candidates" element={<OfficeAdmin token={token} />} />
                             <Route path="volunteer" element={<VolunteerAdmin token={token} />} />
                             <Route path="issues" element={<IssuesAdmin token={token} />} />
                             <Route path="images" element={<ImagesAdmin token={token} />} />
+                            <Route path="videos" element={<VideoAdmin />} />
                             <Route path="milestones" element={<MilestonesAdmin token={token} />} />
                             <Route path="guides" element={<GuidesAdmin token={token} />} />
                             <Route path="udig-coverage" element={<PressCoverageAdmin token={token} />} />
