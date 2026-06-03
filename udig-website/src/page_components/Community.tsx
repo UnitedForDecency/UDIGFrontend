@@ -471,10 +471,7 @@ export default function Community() {
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-1.5 text-xs text-gray-700">
-                                            <span className="text-gray-400">✉</span>
-                                            {selectedSupporter.email}
-                                        </div>
+                                        
                                         <div className="flex items-center gap-1.5 text-xs text-gray-700">
                                             <span className="text-gray-400">📍</span>
                                             {selectedSupporter.city && selectedSupporter.state
