@@ -175,7 +175,7 @@ export default function ContestPost() {
     return (
         <section>
             <div className="flex flex-col items-center">
-                <div className="bg-white w-full shadow-2xl justify-items-start wrap-break-word max-w-[75vw] rounded-4xl m-5 p-10 px-15">
+                <div className="bg-white w-full shadow-2xl wrap-break-word max-w-[75vw] rounded-4xl m-5 p-10 px-15">
                     <h1 className="text-5xl font-bold underline decoration-brick-ember text-yale-blue mb-5">
                         {contest.title}
                     </h1>
@@ -210,7 +210,7 @@ export default function ContestPost() {
                     )}
                 </div>
                 {submissionVisible && (
-                    <div className="bg-white w-full shadow-2xl justify-items-start max-w-[75vw] rounded-4xl m-5 p-5 sm:px-10">
+                    <div className="bg-white w-full shadow-2xl max-w-[75vw] rounded-4xl m-5 p-5 sm:px-10">
                         <h3 className="text-lg font-semibold mb-2">
                             Submit an Essay
                         </h3>

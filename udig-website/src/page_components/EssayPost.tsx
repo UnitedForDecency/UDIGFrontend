@@ -70,7 +70,7 @@ export default function EssayPost() {
     return (
         <section>
             <div className="flex flex-col items-center wrap-break-word">
-                <div className="bg-white w-full shadow-2xl justify-items-start max-w-[75vw] rounded-4xl m-5 p-10 px-15">
+                <div className="bg-white w-full shadow-2xl max-w-[75vw] rounded-4xl m-5 p-10 px-15">
                     <h1 className="text-5xl font-bold underline decoration-brick-ember text-yale-blue mb-5">
                         {essay.title}
                     </h1>
