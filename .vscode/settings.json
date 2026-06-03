@@ -1,7 +1,11 @@
 {
-    "cSpell.words": [
-        "Farenheit",
-        "Neumont",
-        "UDIG"
-    ]
+    // The following two settings are here
+    // to support the tailwindcss
+    // intellisense plugin
+    "editor.quickSuggestions": {
+        "strings": "on"
+    },
+    "files.associations": {
+        "*.css": "tailwindcss"
+    }
 }

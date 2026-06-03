@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "editorconfig.editorconfig",
+        "bradlc.vscode-tailwindcss",
+        "oderwat.indent-rainbow"
+    ]
+}
