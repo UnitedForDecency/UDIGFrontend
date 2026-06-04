@@ -1,6 +1,7 @@
 import { type TokenProp, notifyApiError } from "@/App";
 import { useEffect, useState, useRef } from "react";
 import axios, { AxiosError } from "axios";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -9,7 +10,7 @@ import {
     SelectLabel,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -841,62 +842,11 @@ export default function ContestsAdmin({token}: TokenProp) {
                                                     className="p-2 cursor-pointer"
                                                     popoverTarget="contests-admin-featured-suggestions-popover"
                                                 >
-                                                    {/*
-                                                        The following SVG tag uses data from "https://www.iconpacks.net/"
-
-                                                        Specifically, the data is from the following two SVGs, with links provided:
-                                                            "Up Chevron Black": "https://www.iconpacks.net/free-icon/up-chevron-black-16113.html"
-                                                            "Down Chevron Black": "https://www.iconpacks.net/free-icon/down-chevron-black-16112.html"
-
-                                                        The data used is subject to the terms & conditions listed at "https://www.iconpacks.net/terms/"
-                                                    */}
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        xmlnsXlink="http://www.w3.org/1999/xlink"
-                                                        version="1.1"
-                                                        width="16"
-                                                        height="16"
-                                                        viewBox="0 0 256 256"
-                                                        xmlSpace="preserve"
-                                                    >
-                                                        <g
-                                                            style={{
-                                                                stroke: "none",
-                                                                strokeWidth: 0,
-                                                                strokeDasharray: "none",
-                                                                strokeLinecap: "butt",
-                                                                strokeLinejoin: "miter",
-                                                                strokeMiterlimit: 10,
-                                                                fill: "none",
-                                                                fillRule: "nonzero",
-                                                                opacity: 1
-                                                            }}
-                                                            transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)"
-                                                        >
-                                                            <path
-                                                                d={featuredSuggestionsPopoverOpen ? (
-                                                                    // Up arrow data
-                                                                    "M 89.028 68.045 l -4.264 3.93 c -1.225 1.129 -3.132 1.051 -4.261 -0.174 l -34.473 -37.4 c -0.555 -0.602 -1.505 -0.602 -2.06 0 l -34.473 37.4 c -1.129 1.225 -3.037 1.302 -4.261 0.174 l -4.263 -3.93 c -1.225 -1.129 -1.302 -3.037 -0.174 -4.261 l 42.04 -45.609 c 1.164 -1.263 3.159 -1.263 4.323 0 l 42.04 45.609 C 90.331 65.008 90.253 66.916 89.028 68.045 z"
-                                                                ) : (
-                                                                    // Down arrow data
-                                                                    "M 89.028 21.955 l -4.264 -3.93 c -1.225 -1.129 -3.132 -1.051 -4.261 0.174 l -34.473 37.4 c -0.555 0.602 -1.505 0.602 -2.06 0 l -34.473 -37.4 c -1.129 -1.225 -3.037 -1.302 -4.261 -0.174 l -4.263 3.93 c -1.225 1.129 -1.302 3.037 -0.174 4.261 l 42.04 45.609 c 1.164 1.263 3.159 1.263 4.323 0 l 42.04 -45.609 C 90.331 24.992 90.253 23.084 89.028 21.955 z"
-                                                                )}
-                                                                style={{
-                                                                    stroke: "none",
-                                                                    strokeWidth: 1,
-                                                                    strokeDasharray: "none",
-                                                                    strokeLinecap: "butt",
-                                                                    strokeLinejoin: "miter",
-                                                                    strokeMiterlimit: 10,
-                                                                    fill: "rgb(0, 0, 0)",
-                                                                    fillRule: "nonzero",
-                                                                    opacity: 1
-                                                                }}
-                                                                transform=" matrix(1 0 0 1 0 0) "
-                                                                strokeLinecap="round"
-                                                            />
-                                                        </g>
-                                                    </svg>
+                                                    {featuredSuggestionsPopoverOpen ? (
+                                                        <ChevronUp size={20} />
+                                                    ) : (
+                                                        <ChevronDown size={20} />
+                                                    )}
                                                 </button>
                                             </div>
                                             <div
