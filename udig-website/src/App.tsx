@@ -1,7 +1,7 @@
 import './styles.css';
 import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 
 import Navbar from "@/components/ui/Navbar";
 import Footer from "@/components/ui/Footer";
@@ -79,15 +79,58 @@ export function notifyApiError(err: AxiosError, attemptedAction: string) {
     }
 }
 
-function App() {
+type Image = {
+    id: string;
+    imageData: string;
+    type: string;
+    section: string;
+};
+
+export default function App() {
+    const controllerUrl: string = import.meta.env.VITE_MONGO_CONTROLLER_URL;
+
     const [token, setToken] = useState<string | null>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
+    const fetchLogoImage = async (): Promise<void> => {
+        try {
+            return axios.get<Image[]>(
+                `${controllerUrl}/images/type/navbar`
+            ).then(res => {
+                const images: Image[] = res.data;
+
+                if(images.length !== 0) {
+                    for(const image of images) {
+                        if(image.section === "logo") {
+                            const logoLink = document.getElementById("udig-website-icon-head-link");
+
+                            if(logoLink === null) {
+                                console.error("Failed to find the logo link element");
+                                return;
+                            }
+
+                            (logoLink as HTMLLinkElement).href = `data:image/png;base64,${image.imageData}`;
+                            return;
+                        }
+                    }
+                }
+            }, (err: AxiosError) => {
+                if(err.response?.data) {
+                    console.error(err.response.data);
+                } else {
+                    console.error(`Unexpected error occured when fetching logo image: ${err}`);
+                }
+            });
+        } catch(err) {
+            console.error(`Failed to load logo image: ${err}`);
+        }
+    };
+
     const checkAdmin = async (jwt: string) => {
         try {
             const res = await fetch(
-                import.meta.env.VITE_MONGO_CONTROLLER_URL + "/accounts/admin/test",
+                `${controllerUrl}/accounts/admin/test`,
                 {
                     headers: {
                         Authorization: `Bearer ${jwt}`,
@@ -115,6 +158,8 @@ function App() {
     };
 
     useEffect(() => {
+        fetchLogoImage();
+
         const storedToken = localStorage.getItem("token");
 
         if (!storedToken) {
@@ -129,7 +174,6 @@ function App() {
         setIsAdmin(null);
 
         checkAdmin(storedToken);
-
     }, []);
 
     return (
@@ -238,5 +282,3 @@ function App() {
         </Router>
     );
 }
-
-export default App;
