@@ -144,7 +144,7 @@ export default function PublicationsAdmin({ token }: TokenProp) {
 
     return (
         <section>
-            <h1 className="text-3xl font-bold my-5">Udig in the News</h1>
+            <h1 className="text-3xl font-bold my-5">UDIG in the News</h1>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="mb-10">
                 <FieldSet>
@@ -259,7 +259,7 @@ export default function PublicationsAdmin({ token }: TokenProp) {
                             ✕
                         </button>
 
-                        <h2 className="text-xl mb-4">Edit Udig Coverages</h2>
+                        <h2 className="text-xl mb-4">Edit UDIG Coverages</h2>
 
                         {/* SAME FORM */}
                         <form onSubmit={form.handleSubmit(onSubmit)}>
