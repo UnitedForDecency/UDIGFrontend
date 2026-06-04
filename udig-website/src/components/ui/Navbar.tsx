@@ -262,7 +262,7 @@ export default function Navbar({isLoggedIn, isAdmin, onLogout}: NavbarProps) {
                                     <a href="/">My Account</a>
                                 )}
 
-                                <button onClick={onLogout} className="text-red-500">
+                                <button onClick={onLogout} className="cursor-pointer text-red-500">
                                     Logout
                                 </button>
                             </>
@@ -374,7 +374,7 @@ export default function Navbar({isLoggedIn, isAdmin, onLogout}: NavbarProps) {
                                         )}
                                         <button
                                             onClick={onLogout}
-                                            className="ml-3 font-semibold hover:underline text-red-500 px-5 py-2"
+                                            className="ml-3 font-semibold hover:underline cursor-pointer text-red-500 px-5 py-2"
                                         >
                                             Logout
                                         </button>
