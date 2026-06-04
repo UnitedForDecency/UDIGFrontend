@@ -309,7 +309,7 @@ export default function SocialMedia({ token }: TokenProp) {
     if (!post) return;
     try {
       await axios.post(`${apiBase}/reports`, {
-        category: "SocialMedia Post",
+        category: "Social Media Post",
         categoryId: post.id,
         reporterId: userId,
         reason: reportMessage,

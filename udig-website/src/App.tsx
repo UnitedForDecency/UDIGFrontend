@@ -40,7 +40,7 @@ import VolunteerAdmin from "./page_components/Admin/VolunteerAdmin";
 import IssuesAdmin from "./page_components/Admin/IssuesAdmin";
 import ImagesAdmin from "./page_components/Admin/ImagesAdmin";
 import MilestonesAdmin from "./page_components/Admin/MilestoneAdmin";
-import UsersAdmin from "./page_components/Admin/UsersAdmin";
+import CommunityAdmin from "./page_components/Admin/CommunityAdmin";
 import GuidesAdmin from "./page_components/Admin/GuidesAdmin";
 import ReportsAdmin from "./page_components/Admin/ReportsAdmin";
 import PressCoverageAdmin from "./page_components/Admin/UdigCoverageAdmin";
@@ -48,7 +48,7 @@ import OfficeAdmin from './page_components/Admin/OfficeAdmin';
 
 
 // Other pages
-import Leadership from "@/page_components/Leadership";
+import Supporter from "@/page_components/Supporters";
 import History from "@/page_components/History.tsx";
 import Issues from "./page_components/Issues";
 import IssuePost from "./page_components/IssuePost";
@@ -63,7 +63,7 @@ import Certification from './page_components/Certification';
 import PetitionsAndPledgeSubmissionsAdmin from './page_components/Admin/PetitionsAndPledgeSubmissionsAdmin';
 import WhyDecency from './page_components/Whydecency';
 import Publications from './page_components/Publications';
-
+import VideoAdmin from './page_components/Admin/VideosAdmin';
 import { APIProvider } from "@vis.gl/react-google-maps";
 import OfficeInfo from './page_components/OfficeInfo';
 import PublicationsAdmin from './page_components/Admin/PublicationsAdmin';
@@ -194,7 +194,7 @@ export default function App() {
                             {/* UDIG */}
                             <Route path="/about" element={<About />} />
                             <Route path="/impact" element={<Impact />} />
-                            <Route path="/about/leadership" element={<Leadership token={token} />} />
+                            <Route path="/about/supporters" element={<Supporter />} />
                             <Route path="/about/office-registry" element={<OfficeInfo token={token} />} />
                             <Route path="/about/history" element={<History />} />
                             <Route path="/about/udig-coverage" element={<PressCoverage />} />
@@ -219,7 +219,7 @@ export default function App() {
                             <Route path="/get-involved" element={<GetInvolved />} />
                             <Route path="/get-involved/volunteer" element={<Volunteer />} />
                             <Route path="/get-involved/events" element={<Events/>} />
-                            <Route path="/get-involved/community" element={<Community token={token} />} />
+                            <Route path="/get-involved/community" element={<Community />} />
                             <Route path="/get-involved/socialmedia" element={<SocialMedia token={token} />} />
                             <Route path="/get-involved/guides" element={<Guides />} />
                             <Route path="/get-involved/guides/:id" element={<GuidePost />} />
@@ -259,11 +259,12 @@ export default function App() {
                                 <Route path="events" element={<EventsAdmin token={token} />} />
                                 <Route path="petitions-and-pledges" element={<PetitionsAndPledgeSubmissionsAdmin token={token} />} />
                                 <Route path="impact" element={<ImpactAdmin token={token} />} />
-                                <Route path="users" element={<UsersAdmin token={token} />} />
+                                <Route path="community" element={<CommunityAdmin token={token} />} />
                                 <Route path="elected-officials/candidates" element={<OfficeAdmin token={token} />} />
                                 <Route path="volunteer" element={<VolunteerAdmin token={token} />} />
                                 <Route path="issues" element={<IssuesAdmin token={token} />} />
                                 <Route path="images" element={<ImagesAdmin token={token} />} />
+                                <Route path="videos" element={<VideoAdmin />} />
                                 <Route path="milestones" element={<MilestonesAdmin token={token} />} />
                                 <Route path="guides" element={<GuidesAdmin token={token} />} />
                                 <Route path="udig-coverage" element={<PressCoverageAdmin token={token} />} />
